@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-05T08:55:40-06:00</updated>
+  <updated>2016-11-05T19:04:46-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -121,9 +121,9 @@ $ npm install typescript@2.0.6 --save-dev
 }
 </code></pre>
 
-<p>Remove the <em>test.ts</em> file from the &ldquo;src&rdquo; folder. Now, run the compiler again, and you&rsquo;ll see that <code>test.js</code> is delivered to the <code>dist</code> directory.</p>
+<p>Remove the <em>test.js</em> file from the &ldquo;src&rdquo; folder. Now, run the compiler again, and you&rsquo;ll see that <code>test.js</code> is delivered to the <code>dist</code> directory.</p>
 
-<p>This is much nicer, but let&rsquo;s take it one step further. Instead returning to the terminal after each change and manually running the compiler each time let&rsquo;s automate the process with Gulp:</p>
+<p>This is much nicer, but let&rsquo;s take it one step further. Instead of returning to the terminal after each change and manually running the compiler each time let&rsquo;s automate the process with Gulp:</p>
 
 <pre><code class="sh">$ npm install gulp@3.9.1 gulp-typescript@3.1.1 --save-dev
 </code></pre>
@@ -329,7 +329,7 @@ export default new App().express;
 </ul>
 
 
-<blockquote><p><strong>NOTE</strong>: If you have a text editor rich TypeScript support, the error in <em>index.ts</em> should have disappeared.</p></blockquote>
+<blockquote><p><strong>NOTE</strong>: If you have a text editor with rich TypeScript support, the error in <em>index.ts</em> should have disappeared.</p></blockquote>
 
 <p>Currently, there&rsquo;s a simple placeholder handler for the base URL that should return a JSON payload with <code>{ "message": "Hello World!" }</code>. Before writing more code, let&rsquo;s make sure that we&rsquo;re starting with a working, listening, and hopefully responding server. We&rsquo;re going to use <a href="https://httpie.org/">httpie</a> for this quick sanity check.</p>
 
@@ -361,7 +361,7 @@ X-Powered-By: Express
 
 <h2>The API</h2>
 
-<p>Since we&rsquo;re good developers (and citizens), let&rsquo;s utilize TDD (test-driven development) while we build out the API. That means want to set up a testing environment. We&rsquo;ll be writing our test files in TypeScript, and using <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> to create the tests. Let&rsquo;s start by installing these to our <code>devDependencies</code>:</p>
+<p>Since we&rsquo;re good developers (and citizens), let&rsquo;s utilize TDD (test-driven development) while we build out the API. That means we want to set up a testing environment. We&rsquo;ll be writing our test files in TypeScript, and using <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> to create the tests. Let&rsquo;s start by installing these to our <code>devDependencies</code>:</p>
 
 <pre><code class="sh">$ npm install mocha@3.1.2 chai@3.5.0 chai-http@3.0.0 --save-dev
 $ npm install @types/mocha@2.2.32 @types/chai@3.4.34 @types/chai-http@0.0.29 --save-dev
@@ -416,7 +416,7 @@ describe('baseRoute', () =&gt; {
 
 <h2>First Endpoint</h2>
 
-<p>Our API will be delivering data on superheros, so we&rsquo;ll need to have a datastore for the API to access. Rather than setting up a full database, for this example let&rsquo;s use a JSON file as our &ldquo;database&rdquo;. Grad the data <a href="https://raw.githubusercontent.com/mjhea0/typescript-node-api/master/src/data.json">here</a> and save it to a new file called <em>data.json</em> in the &ldquo;src&rdquo; folder.</p>
+<p>Our API will be delivering data on superheros, so we&rsquo;ll need to have a datastore for the API to access. Rather than setting up a full database, for this example let&rsquo;s use a JSON file as our &ldquo;database&rdquo;. Grab the data <a href="https://raw.githubusercontent.com/mjhea0/typescript-node-api/master/src/data.json">here</a> and save it to a new file called <em>data.json</em> in the &ldquo;src&rdquo; folder.</p>
 
 <p>With this little store of data, we&rsquo;ll implement a CRUD interface for the superhero resource. To start, let&rsquo;s implement an endpoint that returns all of our superheros. Here&rsquo;s a test for this endpoint:</p>
 

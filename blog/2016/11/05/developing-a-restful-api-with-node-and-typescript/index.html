@@ -256,9 +256,9 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Remove the <em>test.ts</em> file from the &ldquo;src&rdquo; folder. Now, run the compiler again, and you&rsquo;ll see that <code>test.js</code> is delivered to the <code>dist</code> directory.</p>
+<p>Remove the <em>test.js</em> file from the &ldquo;src&rdquo; folder. Now, run the compiler again, and you&rsquo;ll see that <code>test.js</code> is delivered to the <code>dist</code> directory.</p>
 
-<p>This is much nicer, but let&rsquo;s take it one step further. Instead returning to the terminal after each change and manually running the compiler each time let&rsquo;s automate the process with Gulp:</p>
+<p>This is much nicer, but let&rsquo;s take it one step further. Instead of returning to the terminal after each change and manually running the compiler each time let&rsquo;s automate the process with Gulp:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install gulp@3.9.1 gulp-typescript@3.1.1 --save-dev
@@ -585,7 +585,7 @@
 </ul>
 
 
-<blockquote><p><strong>NOTE</strong>: If you have a text editor rich TypeScript support, the error in <em>index.ts</em> should have disappeared.</p></blockquote>
+<blockquote><p><strong>NOTE</strong>: If you have a text editor with rich TypeScript support, the error in <em>index.ts</em> should have disappeared.</p></blockquote>
 
 <p>Currently, there&rsquo;s a simple placeholder handler for the base URL that should return a JSON payload with <code>{ "message": "Hello World!" }</code>. Before writing more code, let&rsquo;s make sure that we&rsquo;re starting with a working, listening, and hopefully responding server. We&rsquo;re going to use <a href="https://httpie.org/">httpie</a> for this quick sanity check.</p>
 
@@ -632,7 +632,7 @@
 
 <h2>The API</h2>
 
-<p>Since we&rsquo;re good developers (and citizens), let&rsquo;s utilize TDD (test-driven development) while we build out the API. That means want to set up a testing environment. We&rsquo;ll be writing our test files in TypeScript, and using <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> to create the tests. Let&rsquo;s start by installing these to our <code>devDependencies</code>:</p>
+<p>Since we&rsquo;re good developers (and citizens), let&rsquo;s utilize TDD (test-driven development) while we build out the API. That means we want to set up a testing environment. We&rsquo;ll be writing our test files in TypeScript, and using <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> to create the tests. Let&rsquo;s start by installing these to our <code>devDependencies</code>:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -724,7 +724,7 @@
 
 <h2>First Endpoint</h2>
 
-<p>Our API will be delivering data on superheros, so we&rsquo;ll need to have a datastore for the API to access. Rather than setting up a full database, for this example let&rsquo;s use a JSON file as our &ldquo;database&rdquo;. Grad the data <a href="https://raw.githubusercontent.com/mjhea0/typescript-node-api/master/src/data.json">here</a> and save it to a new file called <em>data.json</em> in the &ldquo;src&rdquo; folder.</p>
+<p>Our API will be delivering data on superheros, so we&rsquo;ll need to have a datastore for the API to access. Rather than setting up a full database, for this example let&rsquo;s use a JSON file as our &ldquo;database&rdquo;. Grab the data <a href="https://raw.githubusercontent.com/mjhea0/typescript-node-api/master/src/data.json">here</a> and save it to a new file called <em>data.json</em> in the &ldquo;src&rdquo; folder.</p>
 
 <p>With this little store of data, we&rsquo;ll implement a CRUD interface for the superhero resource. To start, let&rsquo;s implement an endpoint that returns all of our superheros. Here&rsquo;s a test for this endpoint:</p>
 

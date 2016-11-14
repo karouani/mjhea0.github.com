@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-06T07:30:23-07:00</updated>
+  <updated>2016-11-14T12:44:31-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1518,6 +1518,8 @@ const knex = require('../db/connection');
 
 const options = {};
 
+init();
+
 passport.use(new LocalStrategy(options, (username, password, done) =&gt; {
   // check to see if the username exists
   knex('users').where({ username }).first()
@@ -1535,9 +1537,9 @@ passport.use(new LocalStrategy(options, (username, password, done) =&gt; {
 module.exports = passport;
 </code></pre>
 
-<p>  Here, we check if the username exists in the database and then pass the appropriate results back to Passport via the callback.</p>
+<p>Here, we check if the username exists in the database and then pass the appropriate results back to Passport via the callback.</p>
 
-<p>  Flow:</p>
+<p>Flow:</p>
 
 <ul>
 <li>Does the username exist?
@@ -1683,21 +1685,15 @@ const router = express.Router();
 
 const authHelpers = require('../auth/_helpers');
 
-router.post('/register', (req, res, next)  =&gt; {
+router.post('/register', authHelpers.loginRedirect, (req, res, next)  =&gt; {
   return authHelpers.createUser(req, res)
-  .then((user) =&gt; { handleLogin(res, user[0]); })
-  .then(() =&gt; { handleResponse(res, 200, 'success'); })
+  .then((response) =&gt; {
+    passport.authenticate('local', (err, user, info) =&gt; {
+      if (user) { handleResponse(res, 200, 'success'); }
+    })(req, res, next);
+  })
   .catch((err) =&gt; { handleResponse(res, 500, 'error'); });
 });
-
-function handleLogin(req, user) {
-  return new Promise((resolve, reject) =&gt; {
-    req.login(user, (err) =&gt; {
-      if (err) reject(err);
-      resolve();
-    });
-  });
-}
 
 function handleResponse(res, code, statusMsg) {
   res.status(code).json({status: statusMsg});

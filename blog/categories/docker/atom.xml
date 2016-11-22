@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Docker | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/docker/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-14T12:44:31-07:00</updated>
+  <updated>2016-11-22T11:07:51-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Node With Docker - Continuous Integration and Delivery]]></title>
     <link href="http://mherman.org/blog/2015/03/06/node-with-docker-continuous-integration-and-delivery/"/>
-    <updated>2015-03-06T08:05:00-07:00</updated>
+    <updated>2015-03-06T08:05:00-06:00</updated>
     <id>http://mherman.org/blog/2015/03/06/node-with-docker-continuous-integration-and-delivery</id>
     <content type="html"><![CDATA[<p>Welcome.</p>
 

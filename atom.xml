@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-14T12:44:31-07:00</updated>
+  <updated>2016-11-22T11:07:51-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Developing a RESTful API With Node and TypeScript]]></title>
     <link href="http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript/"/>
-    <updated>2016-11-05T07:38:56-06:00</updated>
+    <updated>2016-11-05T08:38:56-05:00</updated>
     <id>http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript</id>
     <content type="html"><![CDATA[<p>This tutorial details how to develop a RESTful API with <a href="https://nodejs.org/en/">NodeJS</a>, <a href="http://expressjs.com/">ExpressJS</a>, and <a href="https://www.typescriptlang.org/">TypeScript</a> using test-driven development (TDD).</p>
 
@@ -1034,7 +1034,7 @@
   <entry>
     <title type="html"><![CDATA[Token-Based Authentication With Node]]></title>
     <link href="http://mherman.org/blog/2016/10/28/token-based-authentication-with-node/"/>
-    <updated>2016-10-28T07:36:51-06:00</updated>
+    <updated>2016-10-28T08:36:51-05:00</updated>
     <id>http://mherman.org/blog/2016/10/28/token-based-authentication-with-node</id>
     <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing token-based authentication in a Node app using JSON Web Tokens (JWTs) and Postgres.</p>
 
@@ -2111,7 +2111,7 @@
   <entry>
     <title type="html"><![CDATA[Node, Passport, and Postgres]]></title>
     <link href="http://mherman.org/blog/2016/09/25/node-passport-and-postgres/"/>
-    <updated>2016-09-25T13:10:34-06:00</updated>
+    <updated>2016-09-25T14:10:34-05:00</updated>
     <id>http://mherman.org/blog/2016/09/25/node-passport-and-postgres</id>
     <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing authentication in a Node app using Passport and Postgres.</p>
 
@@ -3938,7 +3938,7 @@
   <entry>
     <title type="html"><![CDATA[Testing Node and Express]]></title>
     <link href="http://mherman.org/blog/2016/09/12/testing-node-and-express/"/>
-    <updated>2016-09-12T07:09:13-06:00</updated>
+    <updated>2016-09-12T08:09:13-05:00</updated>
     <id>http://mherman.org/blog/2016/09/12/testing-node-and-express</id>
     <content type="html"><![CDATA[<p>This tutorial looks at how to test an <a href="https://expressjs.com/">Express</a> CRUD app with <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a>. Although we&rsquo;ll be writing both <a href="http://stackoverflow.com/questions/5357601/whats-the-difference-between-unit-tests-and-integration-tests">unit and integration tests</a>, the focus will be on the latter so that the tests run against the database in order to test the full functionality of our app. Postgres will be used, but feel free to use your favorite relational database.</p>
 
@@ -5969,7 +5969,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Atom for Web Developers]]></title>
     <link href="http://mherman.org/blog/2016/08/16/atom-for-web-developers/"/>
-    <updated>2016-08-16T07:25:39-06:00</updated>
+    <updated>2016-08-16T08:25:39-05:00</updated>
     <id>http://mherman.org/blog/2016/08/16/atom-for-web-developers</id>
     <content type="html"><![CDATA[<p>This is a no frills look at <a href="https://atom.io/">Atom</a>, a powerful, open-source text editor maintained by the GitHub team.</p>
 
@@ -6164,7 +6164,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Swagger and NodeJS]]></title>
     <link href="http://mherman.org/blog/2016/05/26/swagger-and-nodejs/"/>
-    <updated>2016-05-26T07:22:46-06:00</updated>
+    <updated>2016-05-26T08:22:46-05:00</updated>
     <id>http://mherman.org/blog/2016/05/26/swagger-and-nodejs</id>
     <content type="html"><![CDATA[<p><strong>This tutorial details how to describe a RESTFul API using <a href="http://swagger.io/">Swagger</a> along with Node and Express.</strong></p>
 
@@ -6708,7 +6708,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Test Driven Development With Node, Postgres, and Knex (Red/Green/Refactor)]]></title>
     <link href="http://mherman.org/blog/2016/04/28/test-driven-development-with-node/"/>
-    <updated>2016-04-28T08:07:39-06:00</updated>
+    <updated>2016-04-28T09:07:39-05:00</updated>
     <id>http://mherman.org/blog/2016/04/28/test-driven-development-with-node</id>
     <content type="html"><![CDATA[<p><strong>Today we will be developing a RESTful API with <a href="https://nodejs.org">Node</a>, <a href="http://expressjs.com/">Express</a>, <a href="http://knexjs.org/">Knex</a> - a SQL query builder - and <a href="http://www.postgresql.org/">PostgreSQL</a> using test driven development (TDD).</strong></p>
 
@@ -6787,7 +6787,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>With out database created we can initialize Knex.</p>
+<p>With our database created we can initialize Knex.</p>
 
 <h3>Knex Setup</h3>
 
@@ -8583,7 +8583,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Designing a RESTful API With Node and Postgres]]></title>
     <link href="http://mherman.org/blog/2016/03/13/designing-a-restful-api-with-node-and-postgres/"/>
-    <updated>2016-03-13T07:56:00-06:00</updated>
+    <updated>2016-03-13T07:56:00-05:00</updated>
     <id>http://mherman.org/blog/2016/03/13/designing-a-restful-api-with-node-and-postgres</id>
     <content type="html"><![CDATA[<p><strong>In this tutorial we&rsquo;ll create a RESTful web service with JavaScript, Node, Express, Postgres, and pg-promise.</strong></p>
 
@@ -9191,7 +9191,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Node, Postgres, and Sequelize]]></title>
     <link href="http://mherman.org/blog/2015/10/22/node-postgres-sequelize/"/>
-    <updated>2015-10-22T10:52:00-06:00</updated>
+    <updated>2015-10-22T10:52:00-05:00</updated>
     <id>http://mherman.org/blog/2015/10/22/node-postgres-sequelize</id>
     <content type="html"><![CDATA[<p><strong>Let&rsquo;s build a CRUD app with Node (v4.1.1), Express (v4.13.1), Sequelize (v3.12.2), and PostgreSQL (9.4.4).</strong></p>
 
@@ -9885,7 +9885,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Social Authentication in Node.js With Passport]]></title>
     <link href="http://mherman.org/blog/2015/09/26/social-authentication-in-node-dot-js-with-passport/"/>
-    <updated>2015-09-26T13:37:00-06:00</updated>
+    <updated>2015-09-26T13:37:00-05:00</updated>
     <id>http://mherman.org/blog/2015/09/26/social-authentication-in-node-dot-js-with-passport</id>
     <content type="html"><![CDATA[<p><a href="https://github.com/jaredhanson/passport">Passport</a> is a library that provides a mechanism for easily setting up an authentication/registration system with support for <a href="https://github.com/jaredhanson/passport#strategies">several frameworks and auth providers</a>. <strong>In this tutorial, we’ll demonstrate in detail how to integrate this library into a Node.JS/Express 4 application to provide user authentication through LinkedIn, Github, and Twitter using OAuth 2.0.</strong></p>
 
@@ -10684,7 +10684,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Testing Node.js With Mocha and Chai]]></title>
     <link href="http://mherman.org/blog/2015/09/10/testing-node-js-with-mocha-and-chai/"/>
-    <updated>2015-09-10T10:52:00-06:00</updated>
+    <updated>2015-09-10T10:52:00-05:00</updated>
     <id>http://mherman.org/blog/2015/09/10/testing-node-js-with-mocha-and-chai</id>
     <content type="html"><![CDATA[<p><strong>This post serves as an introduction to testing a Node.js RESTful API with <a href="http://mochajs.org/">Mocha</a> (v2.3.1). a JavaScript testing framework.</strong></p>
 
@@ -11303,7 +11303,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Node, Express, Swig, and MongoDB - Getting Started With CRUD]]></title>
     <link href="http://mherman.org/blog/2015/08/24/node-express-swig-mongo-primer/"/>
-    <updated>2015-08-24T08:11:00-06:00</updated>
+    <updated>2015-08-24T08:11:00-05:00</updated>
     <id>http://mherman.org/blog/2015/08/24/node-express-swig-mongo-primer</id>
     <content type="html"><![CDATA[<p><strong>Let&rsquo;s create a basic CRUD app using Node, Express, Swig, and MongoDB.</strong></p>
 
@@ -12232,7 +12232,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Primer on Swig Templating]]></title>
     <link href="http://mherman.org/blog/2015/08/23/primer-on-swig-templating/"/>
-    <updated>2015-08-23T14:10:00-06:00</updated>
+    <updated>2015-08-23T14:10:00-05:00</updated>
     <id>http://mherman.org/blog/2015/08/23/primer-on-swig-templating</id>
     <content type="html"><![CDATA[<p><strong>Let&rsquo;s look at the basics of <a href="http://paularmstrong.github.io/swig/">Swig</a>, &ldquo;a simple, powerful, and extendable JavaScript Template Engine&rdquo; for NodeJS.</strong></p>
 
@@ -12713,7 +12713,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Handling User Authentication With the MEAN Stack]]></title>
     <link href="http://mherman.org/blog/2015/07/02/handling-user-authentication-with-the-mean-stack/"/>
-    <updated>2015-07-02T07:04:00-06:00</updated>
+    <updated>2015-07-02T07:04:00-05:00</updated>
     <id>http://mherman.org/blog/2015/07/02/handling-user-authentication-with-the-mean-stack</id>
     <content type="html"><![CDATA[<div style="text-align:center;">
   <img src="http://mherman.org/images/mean-auth.png" style="max-width: 100%; border:0;" alt="mean stack authentication">
@@ -13884,7 +13884,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Testing AngularJS With Protractor and Karma - Part 2]]></title>
     <link href="http://mherman.org/blog/2015/04/26/testing-angularjs-with-protractor-and-karma-part-2/"/>
-    <updated>2015-04-26T08:06:00-06:00</updated>
+    <updated>2015-04-26T08:06:00-05:00</updated>
     <id>http://mherman.org/blog/2015/04/26/testing-angularjs-with-protractor-and-karma-part-2</id>
     <content type="html"><![CDATA[<p><strong>This article details how to test a simple AngularJS application using unit tests and end-to-end (E2E) tests.</strong></p>
 
@@ -14512,7 +14512,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Testing AngularJS With Protractor and Karma - Part 1]]></title>
     <link href="http://mherman.org/blog/2015/04/09/testing-angularjs-with-protractor-and-karma-part-1/"/>
-    <updated>2015-04-09T09:06:00-06:00</updated>
+    <updated>2015-04-09T09:06:00-05:00</updated>
     <id>http://mherman.org/blog/2015/04/09/testing-angularjs-with-protractor-and-karma-part-1</id>
     <content type="html"><![CDATA[<p><strong>This article details how to test a simple AngularJS application using unit tests and end-to-end (E2E) tests.</strong></p>
 
@@ -15576,7 +15576,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Node With Docker - Continuous Integration and Delivery]]></title>
     <link href="http://mherman.org/blog/2015/03/06/node-with-docker-continuous-integration-and-delivery/"/>
-    <updated>2015-03-06T08:05:00-07:00</updated>
+    <updated>2015-03-06T08:05:00-06:00</updated>
     <id>http://mherman.org/blog/2015/03/06/node-with-docker-continuous-integration-and-delivery</id>
     <content type="html"><![CDATA[<p>Welcome.</p>
 
@@ -16113,7 +16113,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[PostgreSQL and NodeJS]]></title>
     <link href="http://mherman.org/blog/2015/02/12/postgresql-and-nodejs/"/>
-    <updated>2015-02-12T19:07:00-07:00</updated>
+    <updated>2015-02-12T19:07:00-06:00</updated>
     <id>http://mherman.org/blog/2015/02/12/postgresql-and-nodejs</id>
     <content type="html"><![CDATA[<p><strong>Today we&rsquo;re going to build a CRUD todo single page application with Node, Express, Angular, and PostgreSQL.</strong></p>
 
@@ -17304,7 +17304,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[Sublime Text for Web Developers]]></title>
     <link href="http://mherman.org/blog/2015/02/05/sublime-text-for-web-developers/"/>
-    <updated>2015-02-05T19:07:00-07:00</updated>
+    <updated>2015-02-05T19:07:00-06:00</updated>
     <id>http://mherman.org/blog/2015/02/05/sublime-text-for-web-developers</id>
     <content type="html"><![CDATA[<p><a href="http://www.sublimetext.com/3">Sublime Text 3</a> (ST3) is a powerful editor just as it is. But if you want to step up your game, you need to take advantage of all that ST3 has to offer by learning the keyboard shortcuts and customizing the editor to meet your individual needs&hellip;</p>
 
@@ -17608,7 +17608,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
   <entry>
     <title type="html"><![CDATA[User Authentication With Passport and Express 4]]></title>
     <link href="http://mherman.org/blog/2015/01/31/local-authentication-with-passport-and-express-4/"/>
-    <updated>2015-01-31T07:07:00-07:00</updated>
+    <updated>2015-01-31T07:07:00-06:00</updated>
     <id>http://mherman.org/blog/2015/01/31/local-authentication-with-passport-and-express-4</id>
     <content type="html"><![CDATA[<p>This post demonstrate how to add user authentication to Node/Express with Passport.js.</p>
 

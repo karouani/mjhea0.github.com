@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-22T11:07:51-06:00</updated>
+  <updated>2016-12-03T11:52:25-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Developing a RESTful API With Node and TypeScript]]></title>
     <link href="http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript/"/>
-    <updated>2016-11-05T08:38:56-05:00</updated>
+    <updated>2016-11-05T07:38:56-06:00</updated>
     <id>http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript</id>
     <content type="html"><![CDATA[<p>This tutorial details how to develop a RESTful API with <a href="https://nodejs.org/en/">NodeJS</a>, <a href="http://expressjs.com/">ExpressJS</a>, and <a href="https://www.typescriptlang.org/">TypeScript</a> using test-driven development (TDD).</p>
 
@@ -654,7 +654,7 @@ GET api/v1/heroes
   <entry>
     <title type="html"><![CDATA[Token-Based Authentication With Node]]></title>
     <link href="http://mherman.org/blog/2016/10/28/token-based-authentication-with-node/"/>
-    <updated>2016-10-28T08:36:51-05:00</updated>
+    <updated>2016-10-28T07:36:51-06:00</updated>
     <id>http://mherman.org/blog/2016/10/28/token-based-authentication-with-node</id>
     <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing token-based authentication in a Node app using JSON Web Tokens (JWTs) and Postgres.</p>
 
@@ -1324,7 +1324,7 @@ exports.seed = (knex, Promise) =&gt; {
   <entry>
     <title type="html"><![CDATA[Node, Passport, and Postgres]]></title>
     <link href="http://mherman.org/blog/2016/09/25/node-passport-and-postgres/"/>
-    <updated>2016-09-25T14:10:34-05:00</updated>
+    <updated>2016-09-25T13:10:34-06:00</updated>
     <id>http://mherman.org/blog/2016/09/25/node-passport-and-postgres</id>
     <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing authentication in a Node app using Passport and Postgres.</p>
 
@@ -2397,7 +2397,7 @@ it('should throw an error if the password is &lt; 6 characters', (done) =&gt; {
   <entry>
     <title type="html"><![CDATA[Testing Node and Express]]></title>
     <link href="http://mherman.org/blog/2016/09/12/testing-node-and-express/"/>
-    <updated>2016-09-12T08:09:13-05:00</updated>
+    <updated>2016-09-12T07:09:13-06:00</updated>
     <id>http://mherman.org/blog/2016/09/12/testing-node-and-express</id>
     <content type="html"><![CDATA[<p>This tutorial looks at how to test an <a href="https://expressjs.com/">Express</a> CRUD app with <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a>. Although we&rsquo;ll be writing both <a href="http://stackoverflow.com/questions/5357601/whats-the-difference-between-unit-tests-and-integration-tests">unit and integration tests</a>, the focus will be on the latter so that the tests run against the database in order to test the full functionality of our app. Postgres will be used, but feel free to use your favorite relational database.</p>
 
@@ -3670,7 +3670,7 @@ router.get('/', (req, res, next) =&gt; {
   <entry>
     <title type="html"><![CDATA[Swagger and NodeJS]]></title>
     <link href="http://mherman.org/blog/2016/05/26/swagger-and-nodejs/"/>
-    <updated>2016-05-26T08:22:46-05:00</updated>
+    <updated>2016-05-26T07:22:46-06:00</updated>
     <id>http://mherman.org/blog/2016/05/26/swagger-and-nodejs</id>
     <content type="html"><![CDATA[<p><strong>This tutorial details how to describe a RESTFul API using <a href="http://swagger.io/">Swagger</a> along with Node and Express.</strong></p>
 

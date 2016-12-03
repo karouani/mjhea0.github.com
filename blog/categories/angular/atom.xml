@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Angular | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/angular/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-11-22T11:07:51-06:00</updated>
+  <updated>2016-12-03T11:52:25-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Handling User Authentication With the MEAN Stack]]></title>
     <link href="http://mherman.org/blog/2015/07/02/handling-user-authentication-with-the-mean-stack/"/>
-    <updated>2015-07-02T07:04:00-05:00</updated>
+    <updated>2015-07-02T07:04:00-06:00</updated>
     <id>http://mherman.org/blog/2015/07/02/handling-user-authentication-with-the-mean-stack</id>
     <content type="html"><![CDATA[<div style="text-align:center;">
   <img src="http://mherman.org/images/mean-auth.png" style="max-width: 100%; border:0;" alt="mean stack authentication">
@@ -813,7 +813,7 @@ http://localhost:3000/user/logout
   <entry>
     <title type="html"><![CDATA[Testing AngularJS With Protractor and Karma - Part 2]]></title>
     <link href="http://mherman.org/blog/2015/04/26/testing-angularjs-with-protractor-and-karma-part-2/"/>
-    <updated>2015-04-26T08:06:00-05:00</updated>
+    <updated>2015-04-26T08:06:00-06:00</updated>
     <id>http://mherman.org/blog/2015/04/26/testing-angularjs-with-protractor-and-karma-part-2</id>
     <content type="html"><![CDATA[<p><strong>This article details how to test a simple AngularJS application using unit tests and end-to-end (E2E) tests.</strong></p>
 
@@ -829,6 +829,8 @@ http://localhost:3000/user/logout
 <li>Part 2 - In part two we&rsquo;ll address E2E tests, which verify that all the pieces of code (units) fit together by simulating the user experience through browser automation. <strong>(current)</strong></li>
 </ul>
 
+
+<blockquote><p><em>Updates</em>: December 3rd, 2016 - bumped dependencies</p></blockquote>
 
 <p>Having finished up unit testing, let&rsquo;s now turn our attention to e2e testing using <a href="http://angular.github.io/protractor/#/">Protractor</a>, which is a testing framework built specifically for AngularJS apps. Essentially, it runs tests against an app in the browser via <a href="http://seleniumhq.github.io/selenium/docs/api/javascript/">Selenium Webdriver</a>, interacting with the app from an end user’s perspective.</p>
 
@@ -1250,7 +1252,7 @@ Michaels-MacBook-Pro-3:angular-testing-tutorial michael$
   <entry>
     <title type="html"><![CDATA[Testing AngularJS With Protractor and Karma - Part 1]]></title>
     <link href="http://mherman.org/blog/2015/04/09/testing-angularjs-with-protractor-and-karma-part-1/"/>
-    <updated>2015-04-09T09:06:00-05:00</updated>
+    <updated>2015-04-09T09:06:00-06:00</updated>
     <id>http://mherman.org/blog/2015/04/09/testing-angularjs-with-protractor-and-karma-part-1</id>
     <content type="html"><![CDATA[<p><strong>This article details how to test a simple AngularJS application using unit tests and end-to-end (E2E) tests.</strong></p>
 
@@ -1266,6 +1268,8 @@ Michaels-MacBook-Pro-3:angular-testing-tutorial michael$
 <li><a href="http://mherman.org/blog/2015/04/26/testing-angularjs-with-protractor-and-karma-part-2">Part 2</a> - In part two we&rsquo;ll address E2E tests, which verify that all the pieces of code (units) fit together by simulating the user experience through browser automation.</li>
 </ul>
 
+
+<blockquote><p><em>Updates</em>: December 3rd, 2016 - bumped dependencies</p></blockquote>
 
 <p>To accomplish this we will be using <a href="http://karma-runner.github.io/">Karma</a> v0.12.31 (test runner) and <a href="http://chaijs.com/">Chai</a> v2.2.0 (assertions) for the unit tests (along with <a href="https://github.com/karma-runner/karma-mocha">Karma-Mocha</a>) and <a href="http://angular.github.io/protractor/#/">Protractor</a> v2.0.0 for the E2E tests. This article also uses <a href="https://angularjs.org/">Angular</a> v1.3.15. Be sure to take note of all dependencies and their versions in the <em>package.json</em> and <em>bower.json</em> files in the <a href="https://github.com/mjhea0/angular-testing-tutorial">repo</a>.</p>
 
@@ -1966,7 +1970,7 @@ Chrome 41.0.2272 (Mac OS X 10.10.2): Executed 12 of 12 SUCCESS (0.16 secs / 0.02
   <entry>
     <title type="html"><![CDATA[Kickstarting Angular With Gulp and Browserify, Part 2 - Browserify]]></title>
     <link href="http://mherman.org/blog/2014/08/15/kickstarting-angular-with-gulp-and-browserify-part-2/"/>
-    <updated>2014-08-15T09:56:00-05:00</updated>
+    <updated>2014-08-15T09:56:00-06:00</updated>
     <id>http://mherman.org/blog/2014/08/15/kickstarting-angular-with-gulp-and-browserify-part-2</id>
     <content type="html"><![CDATA[<p>Hello. Welcome to the second half. <a href="http://mherman.org/blog/2014/08/14/kickstarting-angular-with-gulp">Last time</a>, we built a nice Angular starter project, utilizing Gulp and Bower. Let&rsquo;s take this a step further and add the power of <a href="http://browserify.org/">Browserify</a> into the mix. Before you read any further, check out the <a href="https://github.com/substack/browserify-handbook#introduction">Introduction</a> to the <a href="https://github.com/substack/browserify-handbook">Browserify Handbook</a> to learn about the problems that Browserify solves.</p>
 
@@ -2283,7 +2287,7 @@ gulp.task('build', function() {
   <entry>
     <title type="html"><![CDATA[Kickstarting Angular With Gulp and Browserify, Part 1 - Gulp and Bower]]></title>
     <link href="http://mherman.org/blog/2014/08/14/kickstarting-angular-with-gulp/"/>
-    <updated>2014-08-14T08:17:00-05:00</updated>
+    <updated>2014-08-14T08:17:00-06:00</updated>
     <id>http://mherman.org/blog/2014/08/14/kickstarting-angular-with-gulp</id>
     <content type="html"><![CDATA[<p>Let&rsquo;s develop an Angular boilerplate. Why? Despite the plethora of Angular seeds/generators/templates/boilerplates/starters/etc. on Github, none of them will ever do <em>exactly</em> what you want unless you build your own, piece by piece. By designing your own, you will better understand each component as well as how each fits into the greater project. Stop fighting against a boilerplate that just doesn&rsquo;t fit your needs and start from scratch. Keep it simple, as you learn the process.</p>
 

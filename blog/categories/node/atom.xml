@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-03T11:52:25-07:00</updated>
+  <updated>2016-12-12T08:23:27-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -2556,7 +2556,7 @@ module.exports = require('knex')(config);
 
 <h2>Test Structure</h2>
 
-<p>With that complete, let&rsquo;s look at the current test structure. In the &ldquo;src&rdquo; directory, you&rsquo;ll notice a &ldquo;test&rdquo; directory, which as you probably guessed contains the test specs. Two sample tests have been created, plus there is some basic configuration set up for <a href="https://github.com/jshint/jshint">JSHint</a> and <a href="http://jscs.info/">JSCS</a> so that the code is linted against the style config and conventions defined in the <em>.jscsrc</em>  and <em>jshintrc</em> files, respectively.</p>
+<p>With that complete, let&rsquo;s look at the current test structure. In the project root, you&rsquo;ll notice a &ldquo;test&rdquo; directory, which as you probably guessed contains the test specs. Two sample tests have been created, plus there is some basic configuration set up for <a href="https://github.com/jshint/jshint">JSHint</a> and <a href="http://jscs.info/">JSCS</a> so that the code is linted against the style config and conventions defined in the <em>.jscsrc</em>  and <em>jshintrc</em> files, respectively.</p>
 
 <p>Run the tests:</p>
 
@@ -3070,8 +3070,7 @@ module.exports = router;
 
 <p>Code:</p>
 
-<pre><code class="javascript">// *** add a user *** //
-router.post('/', (req, res, next) =&gt; {
+<pre><code class="javascript">router.post('/', (req, res, next) =&gt; {
   const newUsername = req.body.username;
   const newEmail = req.body.email;
   knex('users')
@@ -3142,8 +3141,7 @@ router.post('/', (req, res, next) =&gt; {
 
 <p>Code:</p>
 
-<pre><code class="javascript">// *** update a user *** //
-router.put('/:id', (req, res, next) =&gt; {
+<pre><code class="javascript">router.put('/:id', (req, res, next) =&gt; {
   const userID = parseInt(req.params.id);
   const updatedUsername = req.body.username;
   const updatedEmail = req.body.email;
@@ -3213,8 +3211,7 @@ router.put('/:id', (req, res, next) =&gt; {
 
 <p>Code:</p>
 
-<pre><code class="javascript">// *** delete a user *** //
-router.delete('/:id', (req, res, next) =&gt; {
+<pre><code class="javascript">router.delete('/:id', (req, res, next) =&gt; {
   const userID = parseInt(req.params.id);
   knex('users')
   .del()
@@ -3555,8 +3552,7 @@ module.exports = validateUserResources;
 
 <p>Add the <code>validateUserResources</code> to all the route handlers except the handler to GET ALL users, like so:</p>
 
-<pre><code class="javascript">// *** GET SINGLE user *** //
-router.get('/:id',
+<pre><code class="javascript">router.get('/:id',
   validate.validateUserResources,
   (req, res, next) =&gt; {
     ...
@@ -3632,8 +3628,7 @@ module.exports = {
 
 <p>This function now handles all the knex logic, and it can now be used anywhere in the project. Be sure to update the route handler:</p>
 
-<pre><code class="javascript">// *** GET ALL users *** //
-router.get('/', (req, res, next) =&gt; {
+<pre><code class="javascript">router.get('/', (req, res, next) =&gt; {
   userQueries.getAllUsers((err, users) =&gt; {
     if (err) {
       res.status(500).json({

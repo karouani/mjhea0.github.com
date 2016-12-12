@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-12T08:23:27-07:00</updated>
+  <updated>2016-12-12T15:31:49-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1685,7 +1685,7 @@ const router = express.Router();
 
 const authHelpers = require('../auth/_helpers');
 
-router.post('/register', authHelpers.loginRedirect, (req, res, next)  =&gt; {
+router.post('/register', (req, res, next)  =&gt; {
   return authHelpers.createUser(req, res)
   .then((response) =&gt; {
     passport.authenticate('local', (err, user, info) =&gt; {

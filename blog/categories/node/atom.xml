@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-12T15:31:49-07:00</updated>
+  <updated>2016-12-12T15:34:10-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1684,6 +1684,7 @@ describe('routes : auth', () =&gt; {
 const router = express.Router();
 
 const authHelpers = require('../auth/_helpers');
+const passport = require('../auth/local');
 
 router.post('/register', (req, res, next)  =&gt; {
   return authHelpers.createUser(req, res)
@@ -1800,11 +1801,6 @@ controllers : index
     if (user) { handleResponse(res, 200, 'success'); }
   })(req, res, next);
 });
-</code></pre>
-
-<p>Require Passport:</p>
-
-<pre><code class="javascript">const passport = require('../auth/local');
 </code></pre>
 
 <p>Run the test. You should see:</p>

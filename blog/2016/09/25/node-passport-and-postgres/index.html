@@ -682,10 +682,12 @@
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
+<span class='line-number'>21</span>
 </pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">const</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">);</span>
 </span><span class='line'><span class="kr">const</span> <span class="nx">router</span> <span class="o">=</span> <span class="nx">express</span><span class="p">.</span><span class="nx">Router</span><span class="p">();</span>
 </span><span class='line'>
 </span><span class='line'><span class="kr">const</span> <span class="nx">authHelpers</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;../auth/_helpers&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kr">const</span> <span class="nx">passport</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;../auth/local&#39;</span><span class="p">);</span>
 </span><span class='line'>
 </span><span class='line'><span class="nx">router</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/register&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span>  <span class="o">=&gt;</span> <span class="p">{</span>
 </span><span class='line'>  <span class="k">return</span> <span class="nx">authHelpers</span><span class="p">.</span><span class="nx">createUser</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span>
@@ -875,13 +877,6 @@
 </span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">user</span><span class="p">)</span> <span class="p">{</span> <span class="nx">handleResponse</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">);</span> <span class="p">}</span>
 </span><span class='line'>  <span class="p">})(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">);</span>
 </span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Require Passport:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">const</span> <span class="nx">passport</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;../auth/local&#39;</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure>
 
 

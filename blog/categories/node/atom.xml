@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-23T05:06:27-07:00</updated>
+  <updated>2016-12-23T05:09:36-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -573,7 +573,7 @@ GET / 200 4.059 ms - 25
 
 <p>Run the tests from the terminal with <code>npm test</code> and you should see them all fail:</p>
 
-<pre><code>Flow API
+<pre><code class="sh">Flow API
   GET /api/v1/produce - get all produce
     ✕ should return JSON array (42ms)
     ✕ should return objs w/ correct props (9ms)
@@ -656,7 +656,7 @@ routes(): void {
 
 <p>Here, we simply create an instance of the <code>ProduceRouter</code> class, and attach it to the Express application path specified by its <code>path</code> property. Now cross your fingers and run <code>npm test</code>:</p>
 
-<pre><code>PASS  __tests__/ProduceRouter.test.js
+<pre><code class="sh">PASS  __tests__/ProduceRouter.test.js
  Flow API
    GET /api/v1/produce - get all produce
      ✓ should return JSON array (43ms)
@@ -732,7 +732,7 @@ Ran all test suites.
 
 <p>Run those new tests and make sure they fail like they should:</p>
 
-<pre><code>Flow API
+<pre><code class="sh">Flow API
   GET /api/v1/produce - get all produce
     ✓ should return JSON array (38ms)
     ✓ should return objs w/ correct props (8ms)
@@ -1107,7 +1107,7 @@ removeById(req: $Request, res: $Response): void {
 
 <p>Run the tests one last time:</p>
 
-<pre><code>PASS  __tests__/ProduceRouter.test.js
+<pre><code class="sh">PASS  __tests__/ProduceRouter.test.js
  Flow API
    ✓ allows updates to props other than id (4ms)
    GET /api/v1/produce - get all produce

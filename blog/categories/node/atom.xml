@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-12T15:34:10-07:00</updated>
+  <updated>2016-12-23T05:06:27-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,1144 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Building a RESTful API With Node, Flow, and Jest]]></title>
+    <link href="http://mherman.org/blog/2016/12/23/building-a-restful-api-with-node-and-flow/"/>
+    <updated>2016-12-23T07:59:54-07:00</updated>
+    <id>http://mherman.org/blog/2016/12/23/building-a-restful-api-with-node-and-flow</id>
+    <content type="html"><![CDATA[<p>This tutorial details how to develop a RESTful API with <a href="https://nodejs.org/en/">NodeJS</a>, <a href="http://expressjs.com/">ExpressJS</a>, and <a href="https://flowtype.org/">Flow</a> using test-driven development (TDD).</p>
+
+<p>We&rsquo;ll be going full-Facebook with this application (FaceStack), utilizing:</p>
+
+<ul>
+<li><a href="https://flowtype.org/">Flow</a> for type checking</li>
+<li><a href="http://babeljs.io/">Babel</a> for transpilation</li>
+<li><a href="https://facebook.github.io/jest/">Jest</a> for our testing framework</li>
+<li>(Optionally) <a href="https://yarnpkg.com/">Yarn</a> to replace <a href="https://www.npmjs.com/">NPM</a></li>
+</ul>
+
+
+<h2>Contents</h2>
+
+<ol>
+<li>Project Setup</li>
+<li>Server Setup</li>
+<li>Test Setup</li>
+<li>First Endpoint</li>
+<li>Rounding out CRUD</li>
+<li>Conclusion</li>
+</ol>
+
+
+<h2>Project Setup</h2>
+
+<p>Create a new directory to hold the project:</p>
+
+<pre><code class="sh">$ mkdir flow-node-api
+$ cd flow-node-api
+</code></pre>
+
+<h3>Transpilation</h3>
+
+<p>To start, let&rsquo;s get Babel transpilation up and running. We&rsquo;ll use <a href="http://gulpjs.com/">Gulp</a> to automate the build process.</p>
+
+<blockquote><p><strong>NOTE:</strong> W&rsquo;ll use <a href="https://yarnpkg.com/">yarn</a> here to download and manage dependencies, but you can use <code>npm</code> just as easily if you wish. Anytime you see a <code>yarn add</code> or <code>yarn remove</code> just substitute in a <code>npm install</code> or <code>npm rm</code>. The only difference is that yarn does the <code>--save</code> part for you and with <code>npm</code> you must be explicit.</p></blockquote>
+
+<p>Go ahead and add <code>gulp</code>, <code>gulp-babel</code>, and <code>gulp-sourcemaps</code> to your project, and create a <em>gulpfile.js</em> to start writing our Gulp tasks in:</p>
+
+<pre><code class="sh">$ yarn init -y
+$ yarn add gulp@3.9.1 gulp-babel@6.1.2 gulp-sourcemaps@1.9.1
+$ touch gulpfile.js
+</code></pre>
+
+<p>Also, install Gulp globally (if necessary), so you can run Gulp tasks from the command line:</p>
+
+<pre><code class="sh">$ yarn global add gulp-cli@1.2.2
+</code></pre>
+
+<p>We&rsquo;re going to write all of our source code in the &ldquo;src&rdquo; directory, so the first  Gulp task will need to:</p>
+
+<ol>
+<li>Grab all of the JavaScript files inside of &ldquo;src&rdquo;</li>
+<li>Pipe the files through Babel</li>
+<li>Deliver them to the &ldquo;build&rdquo; directory</li>
+</ol>
+
+
+<pre><code class="javascript">const gulp = require('gulp');
+const babel = require('gulp-babel');
+const sourcemaps = require('gulp-sourcemaps');
+
+gulp.task('scripts', () =&gt; {
+  return gulp.src('src/**/*.js')
+  .pipe(sourcemaps.init())
+  .pipe(babel())
+  .pipe(sourcemaps.write('.'))
+  .pipe(gulp.dest('build'));
+});
+</code></pre>
+
+<p>Pretty straightforward. Time to test!</p>
+
+<p>Add a &ldquo;src&rdquo; directory, and then create a file inside of it called <em>index.js</em>:</p>
+
+<pre><code class="sh">$ mkdir src &amp;&amp; touch src/index.js
+</code></pre>
+
+<p>Put some kind of JavaScript statement inside of your newly created file, like:</p>
+
+<pre><code class="javascript">// src/index.js
+console.log('Hello World!');
+</code></pre>
+
+<p>Run the Gulp task, and then run the transpiled version of <em>index.js</em>:</p>
+
+<pre><code class="sh">$ gulp scripts
+$ node build/index.js
+Hello World!
+</code></pre>
+
+<p>Nice! However, do you really want to manually type <code>gulp scripts</code> in to build the project <em>every</em> time changes are made? Of course not. So, let&rsquo;s set up a <code>watch</code> and a <code>default</code> task with Gulp to make this easier.</p>
+
+<p>Add the following to <code>gulpfile.js</code>:</p>
+
+<pre><code class="javascript">gulp.task('watch', ['scripts'], () =&gt; {
+  gulp.watch('src/**/*.js', ['scripts']);
+});
+
+gulp.task('default', ['watch']);
+</code></pre>
+
+<p>Now you can just run <code>gulp</code> from the command line, and it will listen for changes to our JavaScript files inside of &ldquo;src&rdquo; and re-run the <code>scripts</code> task whenever it detects changes.</p>
+
+<h3>Flow</h3>
+
+<p>Moving on, to use <a href="https://flowtype.org/">Flow</a>, we&rsquo;ll use the <code>gulp-flowtype</code> plugin to interface with Flow. Download the dependency and head back over to <code>gulpfile.js</code>.</p>
+
+<pre><code class="sh">$ yarn add --dev gulp-flowtype@1.0.0
+</code></pre>
+
+<pre><code class="javascript">// ...
+const flow = require('gulp-flowtype');
+// ...
+
+gulp.task('flow', () =&gt; {
+  return gulp.src('src/**/*.js')
+  .pipe(flow({ killFlow: false }));
+});
+// ...
+
+// update the watch task as well
+gulp.task('watch', ['flow', 'scripts'], () =&gt; {
+  gulp.watch('src/**/*.js', ['flow', 'scripts']);
+});
+</code></pre>
+
+<p>This is all well and good, but we&rsquo;re going to configure a few more parts before we move forward. We need to tell Babel to strip out all of our Flow <a href="https://flowtype.org/docs/type-annotations.html">type annotations</a>. While we&rsquo;re doing that, we might as well install the other Babel dependencies:</p>
+
+<pre><code class="sh">$ yarn add babel-plugin-transform-flow-strip-types@6.21.0
+$ yarn add babel-polyfill@6.20.0 babel-preset-latest@6.16.0
+</code></pre>
+
+<p>With those installed create a <em>.babelrc</em> file in the root of the project, and add these settings:</p>
+
+<pre><code class="json">{
+  "presets": ["latest"],
+  "plugins": ["transform-flow-strip-types"]
+}
+</code></pre>
+
+<p>Finally, we need a <em>.flowconfig</em> to tell Flow that this is a project with Flow annotated code. If you have the Flow CLI installed, you can do this with <code>flow init</code>. If you don&rsquo;t, just create a file called <em>.flowconfig</em>  file and paste this in:</p>
+
+<pre><code>[ignore]
+
+[include]
+
+[libs]
+
+[options]
+</code></pre>
+
+<p>Whew. Now that we&rsquo;ve done all that configuring, let&rsquo;s make sure it&rsquo;s all working by testing out some Flow type annotations. If you&rsquo;re familiar with <a href="http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript/">TypeScript</a>, this syntax will look very familiar. There are some notable differences, but in general TypeScript and Flow look pretty similar. Let&rsquo;s start with a simple function that adds two numbers together.</p>
+
+<p>Run the default gulp task:</p>
+
+<pre><code class="sh">$ gulp
+</code></pre>
+
+<p>Replace the contents of <em>src/index.js</em> with the following:</p>
+
+<pre><code class="javascript">// @flow
+
+function testFunc(item) {
+  return 10 * item;
+}
+
+console.log(testFunc(2));
+console.log(testFunc('banana'));
+</code></pre>
+
+<p>Since Gulp is watching for changes, you should automatically see the output from Flow as soon as you save the file:</p>
+
+<pre><code class="sh">src/index.js:4
+  4:   return 10 * item;
+                   ^^^^ string. This type is incompatible with
+  4:   return 10 * item;
+              ^^^^^^^^^ number
+</code></pre>
+
+<p>Excellent! Flow is doing its job. Here, it&rsquo;s telling us that when we try to call <code>testFunc('banana')</code> we&rsquo;re going to run into issues because <code>testFunc</code> is clearly expecting its argument to be a number, not a string. Notice the <code>// @flow</code> comment that&rsquo;s now at the top of the file. This tells Flow that this file should be <a href="https://en.wikipedia.org/wiki/Type_system#Type_checking">typechecked</a>. If you don&rsquo;t put this comment at the top of the file you&rsquo;re working on, Flow will ignore it. Keep this in mind as you develop your application.</p>
+
+<p>If you read the post on TypeScript (<a href="http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript">Developing a RESTful API With Node and TypeScript</a>), you may already be wondering how we can use types with third-party libraries. Well, with Flow there&rsquo;s a command line tool called <a href="https://github.com/flowtype/flow-typed">flow-typed</a> that is used to manage libdefs (library definitions) for Flow.</p>
+
+<p>First, install <code>flow-typed</code> globally:</p>
+
+<pre><code class="sh">$ yarn global add flow-typed@2.0.0
+</code></pre>
+
+<p>The nice thing about <code>flow-typed</code> is that we don&rsquo;t really have to manage it too much. It reads <code>package.json</code> and automatically downloads the libdefs for our dependencies and stores them in &ldquo;flow-typed&rdquo;.</p>
+
+<p>To install the libdefs for the packages we&rsquo;re using so far just run:</p>
+
+<pre><code class="sh">$ flow-typed install --flowVersion=0.36.0
+</code></pre>
+
+<p>For packages that have no official libdef in the flow-typed repository, a stub is generated. Unfortunately, if you want to omit the <code>--flowVersion=0.36.0</code> flag, you&rsquo;ll need to install <code>flow-bin</code> and have it listed as a dependency in <em>package.json</em>.</p>
+
+<p>Before moving forward, we need to make one more change to our Gulp task for Flow. Now that we&rsquo;ve got <code>flow-typed</code>, tell Flow where we&rsquo;re keeping these definitions:</p>
+
+<pre><code class="javascript">gulp.task('flow', () =&gt; {
+  return gulp.src('src/**/*.js')
+  .pipe(flow({
+    killFlow: false,
+    declarations: './flow-typed'
+  }));
+});
+</code></pre>
+
+<p>Great! We&rsquo;ve got Flow type checking our code, and Babel is stripping out our type annotations and transpiling.</p>
+
+<p>Let&rsquo;s construct the basics of the server.</p>
+
+<h2>Server Setup</h2>
+
+<p>We&rsquo;re going to use <em>src/index.js</em> as the entry point for our Express API along with the <a href="https://github.com/visionmedia/debug">debug</a> module to set up simple logging. Install it with <code>yarn</code> (<code>yarn add debug@2.4.5</code>) or <code>npm</code> (<code>npm install debug@2.4.5 --save</code>), and then wipe everything out of <em>index.js</em> and replace it with the following:</p>
+
+<pre><code class="javascript">// @flow
+
+'use strict'
+
+import * as http from 'http';
+import debug from 'debug';
+import Api from './Api';
+
+// ErrnoError interface for use in onError
+declare interface ErrnoError extends Error {
+  errno?: number;
+  code?: string;
+  path?: string;
+  syscall?: string;
+}
+
+const logger = debug('flow-api:startup');
+const app: Api = new Api();
+const DEFAULT_PORT: number = 3000;
+const port: string | number = normalizePort(process.env.PORT);
+const server: http.Server = http.createServer(app.express);
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+function normalizePort(val: any): number | string {
+  let port: number = (typeof val === 'string') ? parseInt(val, 10) : val;
+
+  if (port &amp;&amp; isNaN(port)) return port;
+  else if (port &gt;= 0) return port;
+  else return DEFAULT_PORT;
+}
+
+function onError(error: ErrnoError): void {
+  if (error.syscall !== 'listen') throw error;
+  let bind: string = (typeof port === 'string') ? `Pipe ${port}` : `Port ${port.toString()}`;
+
+  switch (error.code) {
+    case 'EACCES':
+      console.error(`${bind} requires elevated privileges`);
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(`${bind} is already in use`);
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+function onListening(): void {
+  let addr: string = server.address();
+  let bind: string = (typeof addr === 'string') ? `pipe ${addr}` : `port ${addr.port}`;
+  logger(`Listening on ${bind}`);
+}
+</code></pre>
+
+<p>Alright. This looks like a lot of code, but it&rsquo;s mostly boilerplate with some fancy type annotations added. Let&rsquo;s break it down real quick though anyways:</p>
+
+<ul>
+<li>At the top we&rsquo;ve got our Flow comment, imports, and our first bit of strictly Flow-enabled code - the <code>ErrnoError</code> interface declaration. This error type is used by Express. When using the <code>flow check</code> command from the official command line tool, Flow will not flag this as an error. For whatever reason, <code>gulp-flowtype</code> does. If you get a strange type check error, it may be worth it to install the Flow CLI and double check using <code>flow check</code>.</li>
+<li>After the <code>ErrnoError</code> definition, we set up some data and instantiate the server by attaching our future Express app with <code>http.createServer</code>.</li>
+<li><code>normalizePort</code> looks for the <code>$PORT</code> environment variable and sets the app&rsquo;s port to its value. If it doesn&rsquo;t exist, it sets the port to the default value - <code>3000</code>.</li>
+<li><code>onError</code> is just our basic error handler for the HTTP server.</li>
+<li><code>onListening</code> simply lets us know that our application has actually started and is listening for requests.</li>
+</ul>
+
+
+<p>Run <code>gulp</code>. Right now, you should see Flow complaining about trying to import the API:</p>
+
+<pre><code class="sh">src/index.js:7
+  7: import Api from './Api';
+                     ^^^^^^^ ./Api. Required module not found
+</code></pre>
+
+<p>This makes sense because we don&rsquo;t even have a file called <em>Api.js</em>, so let&rsquo;s create it and set up the basic structure for the API. In this file, the third-party libraries we&rsquo;ll be using are:</p>
+
+<ul>
+<li><a href="http://expressjs.com/">Express</a> - web framework</li>
+<li><a href="https://github.com/expressjs/body-parser">body-parser</a> - JSON body parser for HTTP requests</li>
+<li><a href="https://github.com/expressjs/morgan">morgan</a> - request logging</li>
+</ul>
+
+
+<pre><code class="sh">$ yarn add express@4.14.0 body-parser@1.15.2 morgan@1.7.0
+$ flow-typed install --flowVersion=0.36.0
+$ touch src/Api.js
+</code></pre>
+
+<p>With the dependencies and libdefs acquired, we&rsquo;re ready to build out the <code>Api.js</code> file:</p>
+
+<pre><code class="javascript">// @flow
+
+import express from 'express';
+import morgan from 'morgan';
+import bodyParser from 'body-parser';
+
+export default class Api {
+  // annotate with the express $Application type
+  express: express$Application;
+
+  // create the express instance, attach app-level middleware, attach routers
+  constructor() {
+    this.express = express();
+    this.middleware();
+    this.routes();
+  }
+
+  // register middlewares
+  middleware(): void {
+    this.express.use(morgan('dev'));
+    this.express.use(bodyParser.json());
+    this.express.use(bodyParser.urlencoded({extended: false}));
+  }
+
+  // connect resource routers
+  routes(): void {
+    this.express.use((req: $Request, res: $Response) =&gt; {
+      res.json({ message: 'Hello Flow!' });
+    });
+  }
+}
+</code></pre>
+
+<p>Most of this file ends up just loading and initializing the libraries that we&rsquo;re using. There are a few things to note though:</p>
+
+<ul>
+<li>First, we create a field reference for the <code>Api.express</code> property, and tell Flow that it will be an object of type <code>express$Application</code> from Express.</li>
+<li>The constructor initializes an instance of Express, and attaches it to the instance of <code>Api</code>. Then it calls the other two methods, <code>Api.middleware</code> and <code>Api.routes</code>.</li>
+<li><code>Api.middleware</code> - Initializes and attaches our middleware modules to the app.</li>
+<li><code>Api.routes</code> - Right now, it attaches a single route handler that returns some JSON. However, notice the Flow annotations on the parameters of the anonymous function. These correspond to the base arguments for an Express route handler: <code>$Request</code> and <code>$Response</code>. These refer to Express' extended versions of Node&rsquo;s <code>IncomingMessage</code> and <code>ServerResponse</code> objects, respectively.</li>
+</ul>
+
+
+<p>At this point, you may start to see a Flow error in your terminal that looks something like this:</p>
+
+<pre><code class="sh">src/index.js:12
+ 12: const server: Server = http.createServer(app.express);
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call of method `createServer`
+835:     requestListener?: (request: IncomingMessage, response: ServerResponse) =&gt; void
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function type. Callable signature not found in. See lib: /private/tmp/flow/flowlib_120ceaae/node.js:835
+ 12: const server: Server = http.createServer(app.express);
+                                              ^^^^^^^^^^^ express$Application
+</code></pre>
+
+<p>It would appear that Flow doesn&rsquo;t get the memo that when <code>app.express</code> is called, it does return a request handler. This seems to be an issue with the libdef for Express, because it declares that the <code>express$Application</code> constructor has a return type of <code>void</code>.</p>
+
+<blockquote><p><strong>NOTE:</strong> After unsuccessfully messing with the libdef for a while, I decided I knew that it worked better than Flow, and moved on. If the terminal output bugs you, go ahead and add this comment to the line above where <code>http.createServer</code> is called:</p>
+
+<pre><code class="javascript">// $FlowFixMe: express libdef issue
+</code></pre></blockquote>
+
+<p>Let&rsquo;s go ahead and fire up the app and make sure everything is working as intended thus far. To run the app from the command line, you can run <code>node build/index.js</code>. However, we really should have a start script so we can just type <code>npm start</code> to run the server. Open up <code>package.json</code> and add the following:</p>
+
+<pre><code class="json">"scripts": {
+  "start": "DEBUG=\"flow-api:*\" node build/index.js"
+}
+</code></pre>
+
+<p>The first part of the command just sets the <code>DEBUG</code> environment variable to <code>flow-api:*</code>, so that the <code>debug</code> module writes our logs to stdout. Now you can run <code>npm start</code>, and you should see:</p>
+
+<pre><code class="sh">&gt; DEBUG="flow-api:*" node build/index.js
+
+  flow-api:startup Listening on port 3000 +0ms
+</code></pre>
+
+<p>Awesome! The server is listening. Now, if we hit any endpoint, it should send back our <code>{ message: "Hello Flow!" }</code> payload. You can use <a href="https://httpie.org/">httpi</a> for this kind of thing. If you&rsquo;re on a Mac you can install it with Homebrew: <code>brew install httpie</code>. Then within a new terminal window run:</p>
+
+<pre><code class="sh">$ http localhost:3000/
+</code></pre>
+
+<p>And you should see:</p>
+
+<pre><code class="sh">→ HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 25
+Content-Type: application/json; charset=utf-8
+
+{
+    "message": "Hello Flow!"
+}
+</code></pre>
+
+<p>And we&rsquo;re up and running! At this point, we&rsquo;ve got the base Express application up and running. Now we just need to build out a router that does something useful!</p>
+
+<h2>Test Setup</h2>
+
+<p>Not so fast! Rather than jumping straight into the RESTful router, we&rsquo;re going to set up our testing environment so that as we create endpoints and handlers we can test that they work as we expect. Since we&rsquo;re using the FaceStack, we&rsquo;ll use <a href="https://facebook.github.io/jest/">Jest</a> as well as <a href="https://github.com/WhoopInc/supertest-as-promised">supertest-as-promised</a> to interface with our Express API.</p>
+
+<p>Install the packages:</p>
+
+<pre><code class="sh">$ yarn add --dev jest@18.0.0 supertest@2.0.1 supertest-as-promised@4.0.2
+</code></pre>
+
+<p>Open up <em>package.json</em> again and add a few lines to configure Jest:</p>
+
+<pre><code class="json">"jest": {
+  "transform": {".*": "&lt;rootDir&gt;/node_modules/babel-jest"}
+}
+</code></pre>
+
+<p>This just tells Jest to use Babel and our Babel configuration to interpret our test files and the files they test. To run our tests from the command line, we just need to add a test script to <code>package.json</code>:</p>
+
+<pre><code class="json">"scripts": {
+  "start": "DEBUG=\"flow-api:*\" node build/index.js",
+  "test": "jest"
+}
+</code></pre>
+
+<p>Right now, if you run it, Jest is just going to tell you it couldn&rsquo;t find any tests So, let&rsquo;s fix that. Create a directory called <em>__tests__</em> in the project root, and inside of it add a file to hold our first test:</p>
+
+<pre><code class="sh">$ mkdir __tests__ &amp;&amp; touch __tests__/first.test.js
+</code></pre>
+
+<pre><code class="javascript">import request from 'supertest-as-promised';
+import Api from '../src/Api';
+
+const app = new Api().express;
+
+describe('Flow API', () =&gt; {
+  it('hello test', () =&gt; {
+    return request(app).get('/')
+    .expect(200)
+    .then((res) =&gt; {
+      expect(typeof res.body.message).toBe('string');
+      expect(res.body.message).toBe('Hello Flow!');
+    });
+  });
+});
+</code></pre>
+
+<p>This is a pretty simple test, but it should at least demonstrate the basic structure of what we&rsquo;re doing here. If you&rsquo;re saying to yourself, &ldquo;Hey, this looks a lot like Jasmine!&rdquo;,  you&rsquo;re right it does, because Jest is built on top of Jasmine. Here&rsquo;s a quick breakdown of this first test file:</p>
+
+<ul>
+<li>We import the <code>Api</code> class and <code>supertest-as-promised</code> to create the interface to the API. This way we don&rsquo;t have to manage starting and stopping the server or actually sending requests over a network connection.</li>
+<li>We assert that we&rsquo;re expecting a 200 status code.</li>
+<li>When the response comes back, we assert that the payload should have a property called <code>message</code>, who&rsquo;s value is a string, and that string should equal: &ldquo;Hello Flow!&rdquo;</li>
+</ul>
+
+
+<p>Go ahead and run the tests, <code>npm test</code>, and you should see this output:</p>
+
+<pre><code class="sh">&gt; jest
+
+ PASS  __tests__/first.test.js
+  Flow API
+    ✓ hello test (42ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        2.03s
+Ran all test suites.
+GET / 200 4.059 ms - 25
+</code></pre>
+
+<p>With the test environment set up, let&rsquo;s build out our first endpoint!</p>
+
+<h2>First Endpoint</h2>
+
+<p>Now, we&rsquo;re going to implement CRUD with a single resource - produce. You can use any resource you want or grab the fake data we used <a href="https://raw.githubusercontent.com/mjhea0/flow-node-api/master/data/produce.json">here</a>. In case you&rsquo;re blanking on what CRUD means, we&rsquo;re going to implement 4 actions that the API will support for the produce resource:</p>
+
+<ol>
+<li>Create a produce item.</li>
+<li>Read produce item(s).</li>
+<li>Update a produce item.</li>
+<li>Delete a produce item.</li>
+</ol>
+
+
+<p>We&rsquo;ll start by implementing the <code>GET</code> handler that returns all the produce in our inventory, with the following shape:</p>
+
+<pre><code class="javascript">{
+  id: integer,
+  name: string,
+  quantity: integer,
+  price: integer
+}
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> The <code>id</code> property will not be supplied by the user, but assigned when an item is created by the API.</p></blockquote>
+
+<p>Let&rsquo;s start by first writing some tests that we can test our implementation against as we write it. Rename <em>first.test.js</em> to <em>ProduceRouter.test.js</em>, and replace the current <code>describe</code> block with these tests for the <code>GET</code> all endpoint:</p>
+
+<pre><code class="javascript">describe('Flow API', () =&gt; {
+
+  describe('GET /api/v1/produce - get all produce', () =&gt; {
+    // properties expected on an obj in the response
+    let expectedProps = ['id', 'name', 'quantity', 'price'];
+    it('should return JSON array', () =&gt; {
+      return request(app).get('/api/v1/produce')
+      .expect(200)
+      .then(res =&gt; {
+        // check that it sends back an array
+        expect(res.body).toBeInstanceOf(Array);
+      });
+    });
+    it('should return objs w/ correct props', () =&gt; {
+      return request(app).get('/api/v1/produce')
+      .expect(200)
+      .then(res =&gt; {
+        // check for the expected properties
+        let sampleKeys = Object.keys(res.body[0]);
+        expectedProps.forEach((key) =&gt; {
+          expect(sampleKeys.includes(key)).toBe(true);
+        });
+      });
+    });
+    it('shouldn\'t return objs w/ extra props', () =&gt; {
+      return request(app).get('/api/v1/produce')
+      .expect(200)
+      .then(res =&gt; {
+        // check for only expected properties
+        let extraProps = Object.keys(res.body[0]).filter((key) =&gt; {
+          return !expectedProps.includes(key);
+        });
+        expect(extraProps.length).toBe(0);
+      });
+    });
+  });
+
+});
+</code></pre>
+
+<p>Inside of the outer <code>describe</code>, we&rsquo;ve added a nested block to indicate that all of the tests inside of it are related and, thus, testing the same feature. These three tests are pretty basic and check that:</p>
+
+<ul>
+<li>We get an array back.</li>
+<li>The objects in the array have the required properties.</li>
+<li>The objects in the array do not have extra properties.</li>
+</ul>
+
+
+<p>Run the tests from the terminal with <code>npm test</code> and you should see them all fail:</p>
+
+<pre><code>Flow API
+  GET /api/v1/produce - get all produce
+    ✕ should return JSON array (42ms)
+    ✕ should return objs w/ correct props (9ms)
+    ✕ shouldn't return objs w/ extra props (4ms)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 total
+Snapshots:   0 total
+Time:        1.835s, estimated 2s
+Ran all test suites.
+</code></pre>
+
+<p>Now, let&rsquo;s get rid of all those errors and failed tests, and implement the endpoint.</p>
+
+<p>Create a new directory inside of &ldquo;src&rdquo; called &ldquo;routers&rdquo; and add a file called <em>ProduceRouter.js</em>. This is where we&rsquo;ll implement the handler functions for all of the endpoints designated for the produce resource.</p>
+
+<blockquote><p><strong>NOTE:</strong> Remember - For Flow to type check the file, you have to add the <code>@flow</code> comment at the very top of the file!</p></blockquote>
+
+<pre><code class="javascript">// @ flow
+
+import inventory from '../../data/produce';
+import { Router }  from 'express';
+
+export default class ProduceRouter {
+  // these fields must be type annotated, or Flow will complain!
+  router: Router;
+  path: string;
+
+  // take the mount path as the constructor argument
+  constructor(path = '/api/v1/produce') {
+    // instantiate the express.Router
+    this.router = Router();
+    this.path = path;
+    // glue it all together
+    this.init();
+  }
+
+  /**
+   * Return all items in the inventory
+   */
+  getAll(req: $Request, res: $Response): void {
+    res.status(200).json(inventory);
+  }
+
+  /**
+   * Attach route handlers to their endpoints.
+   */
+  init(): void {
+    this.router.get('/', this.getAll);
+  }
+}
+</code></pre>
+
+<p>The <code>ProduceRouter</code> holds fields for an Express <code>Router</code> instance, and a <code>path</code> property that holds its mount point to the application. The constructor takes this mount point as its only argument and then attaches the endpoint handlers to their endpoints.</p>
+
+<blockquote><p><strong>NOTE:</strong>  The field type annotations for <code>router</code> and <code>path</code> are not strictly required (as far as I can tell). You can get rid of them, and Flow will not complain. But you can&rsquo;t have field declarations without types. It doesn&rsquo;t like that at all. I tend to use them because they&rsquo;re a useful quick reference to the properties on an object.</p></blockquote>
+
+<p>The <code>getAll</code> function has the basic function signature of an Express route handler, and it simply responds to requests with the full inventory list. Notice that the return type is <code>void</code>. This is because of the middleware architecture that Express is built on. Each middleware function is run in sequence, rather than returning a value from the handler.</p>
+
+<p>Finally, in <code>init</code> we will take each of our route handlers, and attach it to a mount path on the router. Each endpoint will be prefixed with the overall <code>Router</code> mount path that is passed to the <code>ProduceRouter</code> constructor. Right now, our <code>ProduceRouter</code> is responding to <code>GET</code> requests at the <code>/api/v1/produce</code> endpoint.</p>
+
+<p>We&rsquo;re done in this file for now, but we&rsquo;ll have to hop back over to <code>Api.js</code> in order to finish linking these things up.</p>
+
+<p>Add an import statement for <code>ProduceRouter</code> at the top:</p>
+
+<pre><code class="javascript">import ProduceRouter from './routers/ProduceRouter';
+</code></pre>
+
+<p>And then replace the <code>routes</code> function with:</p>
+
+<pre><code class="javascript">// connect resource routers
+routes(): void {
+  // create an instance of ProduceRouter
+  const produceRouter = new ProduceRouter();
+
+  // attach it to our express app
+  this.express.use(produceRouter.path, produceRouter.router);
+}
+</code></pre>
+
+<p>Here, we simply create an instance of the <code>ProduceRouter</code> class, and attach it to the Express application path specified by its <code>path</code> property. Now cross your fingers and run <code>npm test</code>:</p>
+
+<pre><code>PASS  __tests__/ProduceRouter.test.js
+ Flow API
+   GET /api/v1/produce - get all produce
+     ✓ should return JSON array (43ms)
+     ✓ should return objs w/ correct props (10ms)
+     ✓ shouldn't return objs w/ extra props (4ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        2.052s
+Ran all test suites.
+</code></pre>
+
+<p>Victory! Go ahead and pat yourself on the back, maybe stretch the legs or get a snack. We&rsquo;ll work out the rest of the endpoints in the next section.</p>
+
+<h2>Rounding out CRUD</h2>
+
+<p>We&rsquo;ve already got one aspect of the &ldquo;Read&rdquo; part of CRUD complete. Let&rsquo;s knock the other one out now. Rather than only being able to get the full list of items, we need to enable requesting items by their <code>id</code>s. First, we need some tests. Start by making sure that this <code>getById</code> handler will:</p>
+
+<ul>
+<li>Return an object of the correct type.</li>
+<li>Return the record that lines up with the <code>id</code> sent with the request.</li>
+<li>Reject out-of-bounds <code>id</code>s.</li>
+</ul>
+
+
+<pre><code class="javascript">describe('GET /api/v1/produce/:id - get produce item by id', () =&gt; {
+  it('should return an obj of type Produce', () =&gt; {
+    return request(app).get('/api/v1/produce/1')
+    .expect(200)
+    .then((res) =&gt; {
+      const reqKeys = ['id', 'name', 'price', 'quantity'];
+      const {item} = res.body;
+      // check it has correct keys
+      reqKeys.forEach((key) =&gt; {
+        expect(Object.keys(item)).toContain(key);
+      });
+      // check type of each field
+      expect(typeof item.id).toBe('number');
+      expect(typeof item.name).toBe('string');
+      expect(typeof item.quantity).toBe('number');
+      expect(typeof item.price).toBe('number');
+    });
+  });
+  it('should return a Produce w/ requested id', () =&gt; {
+    return request(app).get('/api/v1/produce/1')
+    .expect(200)
+    .then((res) =&gt; {
+      expect(res.body.item).toEqual({
+        id: 1,
+        name: 'banana',
+        quantity: 15,
+        price: 1
+      });
+    });
+  });
+  it('should 400 on a request for a nonexistant id', () =&gt; {
+    return Promise.all([
+      request(app).get('/api/v1/produce/-32')
+      .expect(400)
+      .then((res) =&gt; {
+        expect(res.body.message).toBe('No item found with id: -32');
+      }),
+      request(app).get('/api/v1/produce/99999')
+      .expect(400)
+      .then((res) =&gt; {
+        expect(res.body.message).toBe('No item found with id: 99999');
+      })
+    ]);
+  });
+});
+</code></pre>
+
+<p>Run those new tests and make sure they fail like they should:</p>
+
+<pre><code>Flow API
+  GET /api/v1/produce - get all produce
+    ✓ should return JSON array (38ms)
+    ✓ should return objs w/ correct props (8ms)
+    ✓ shouldn't return objs w/ extra props (5ms)
+  GET /api/v1/produce/:id - get produce item by id
+    ✕ should return an obj of type Produce (6ms)
+    ✕ should return a Produce w/ requested id (2ms)
+    ✕ should 400 on a request for a nonexistant id (9ms)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 passed, 6 total
+Snapshots:   0 total
+Time:        1.857s, estimated 2s
+Ran all test suites.
+</code></pre>
+
+<p>Good. Now we can work on making them pass. This one isn&rsquo;t so bad. We just need to parse the ID number from the request params, and find an item in the <code>inventory</code> array with the same ID.</p>
+
+<pre><code class="javascript">/**
+ * Return an item from the inventory by ID.
+ */
+getById(req: $Request, res: $Response): void {
+  const id = parseInt(req.params.id, 10);
+  const record = inventory.find(item =&gt; item.id === id);
+  if (record) {
+    res.status(200).json({
+      message: 'Success!',
+      item: record
+    });
+  } else {
+    res.status(400).json({
+      status: res.status,
+      message: `No item found with id: ${id}`
+    });
+  }
+}
+</code></pre>
+
+<p>Not particularly exciting, but it works for now! Just make sure to add the handler as well:</p>
+
+<pre><code class="javascript">this.router.get('/:id', this.getById);
+</code></pre>
+
+<p>That does it for the &ldquo;R&rdquo; in CRUD.</p>
+
+<h3>POST - Create a New Item</h3>
+
+<p>Let&rsquo;s knock out the &ldquo;C&rdquo; now. We&rsquo;re going to allow <code>POST</code>s to the endpoint <code>/api/v1/produce</code> to be used for creating new items for the inventory. In addition, we&rsquo;ll require that the <code>quantity</code>, <code>price</code>, and <code>name</code> properties are passed.</p>
+
+<p>Tests:</p>
+
+<pre><code class="javascript">describe('POST /api/v1/produce - create new item', () =&gt; {
+  let peach = {
+    name: 'peach',
+    quantity: 10,
+    price: 6
+  };
+  it('should accept and add a valid new item', () =&gt; {
+    return request(app).post('/api/v1/produce')
+    .send(peach)
+    .then((res) =&gt; {
+      expect(res.body.status).toBe(200);
+      expect(res.body.message).toBe('Success!');
+      return request(app).get('/api/v1/produce');
+    })
+    .then((res) =&gt; {
+      let returnedPeach = res.body.find(item =&gt; item.name === 'peach');
+      expect(res.status).toBe(200);
+      expect(returnedPeach.quantity).toBe(10);
+      expect(returnedPeach.price).toBe(6);
+    });
+  });
+  it('should reject post w/o name, price, or quantity', () =&gt; {
+    let badItems = [
+      {
+        name: peach.name,
+        quantity: peach.quantity
+      },
+      {
+        quantity: peach.quantity,
+        price: peach.price
+      },
+      {
+        name: peach.name,
+        price: peach.price
+      }
+    ];
+    return Promise.all(badItems.map(badItem =&gt; {
+      return request(app).post('/api/v1/produce')
+      .send(badItem)
+      .then((res) =&gt; {
+        expect(res.body.status).toBe(400);
+        expect(res.body.message.startsWith('Bad Request')).toBe(true);
+      });
+    }));
+  });
+});
+</code></pre>
+
+<p>Verify that the tests fail with <code>npm test</code>, then add another method to <code>ProduceRouter</code> called <code>postOne</code>.</p>
+
+<blockquote><p><strong>NOTE:</strong> I ended up also writing functions to parse the payload from the request, as well as one to re-write our JSON &ldquo;database&rdquo; file. You can either include those as helper methods somewhere in the same file as <code>ProduceRouter</code>, or define them in a different file and import it. If you decide to import it, make sure that you type annotate the function so that Flow can work with its types. I chose to define them in different files and export them from there.</p></blockquote>
+
+<pre><code class="javascript">/**
+ * Add a new item to the inventory.
+ */
+postOne(req: $Request, res: $Response): void {
+  const received: Produce | boolean = parseProduce(req.body);
+  const newProduce = (received) ? req.body : null;
+  if (received) {
+    newProduce.id = genId(received, inventory);
+    inventory.push(newProduce);
+    res.status(200).json({
+      status: 200,
+      message: 'Success!',
+      item: newProduce
+    });
+    // write updated inventory to the file
+    saveInventory(inventory)
+    .then((writePath) =&gt; {
+      logger(`Inventory updated. Written to:\n\t${path.relative(path.join(__dirname, '..', '..'), writePath)}`);
+    })
+    .catch((err) =&gt; {
+      logger('Error writing to inventory file.');
+      logger(err.stack);
+    });
+  } else {
+    res.status(400).json({
+      status: 400,
+      message: 'Bad Request. Make sure that you submit an item with a name, quantity, and price.'
+    });
+    logger('Malformed POST to /produce.');
+  }
+}
+</code></pre>
+
+<p>Create a new folder within &ldquo;src&rdquo; called &ldquo;util&rdquo;. Then add a <em>parsers.js</em> file:</p>
+
+<pre><code class="javascript">export function parseProduce(input: any): boolean {
+  const requirements = [
+    { key: 'name', type: 'string' },
+    { key: 'quantity', type: 'number' },
+    { key: 'price', type: 'number' }
+  ];
+  return requirements.every((req) =&gt; {
+    return input.hasOwnProperty(req.key) &amp;&amp; typeof input[req.key] === req.type;
+  });
+}
+</code></pre>
+
+<p>&hellip;and <em>save.js</em>:</p>
+
+<pre><code class="javascript">// @flow
+
+import path from 'path';
+import fs from 'fs';
+
+// use a Flow type import to get our Produce type
+import type {Produce} from './types';
+
+export default function saveInventory(inventory: Array&lt;Produce&gt;): Promise&lt;string&gt; {
+  let outpath = path.join(__dirname, '..', '..', 'data', 'produce.json');
+
+  return new Promise((resolve, reject) =&gt; {
+    // lets not write to the file if we're running tests
+    if (process.env.NODE_ENV !== 'test') {
+      fs.writeFile(outpath, JSON.stringify(inventory, null, '\t'), (err) =&gt; {
+        (err) ? reject(err) : resolve(outpath);
+      });
+    }
+  });
+}
+
+export function genId(prod: Produce, inv: Array&lt;Produce&gt;): number {
+  let maxId: number | typeof undefined = inv[0].id;
+  inv.slice(1).forEach((item) =&gt; {
+    if (item.id &amp;&amp; item.id &gt; maxId) maxId = item.id;
+  });
+  return maxId + 1;
+}
+</code></pre>
+
+<p>We don&rsquo;t have tests written currently for these, but they&rsquo;re pretty simple functions. Most importantly, now we have a couple utility functions that we can reuse. We&rsquo;ll definitely need to reuse <code>saveInventory</code> whenever we need to persist changes to the JSON file holding the inventory.</p>
+
+<p>Add the imports to <em>ProduceRouter.js</em>:</p>
+
+<pre><code class="javascript">import saveInventory, {genId} from '../util/save';
+import { parseProduce } from '../util/parsers';
+</code></pre>
+
+<p>Then update the <code>init()</code>:</p>
+
+<pre><code class="javascript">/**
+ * Attach route handlers to their endpoints.
+ */
+init(): void {
+  this.router.get('/', this.getAll);
+  this.router.get('/:id', this.getById);
+  this.router.post('/', this.postOne);
+}
+</code></pre>
+
+<p>With this code filled in, run <code>npm test</code> again and when you&rsquo;ve got all green check marks, head on to the next section.</p>
+
+<h3>PUT - Update an Item</h3>
+
+<p>This route will allow requests to update the properties of a single item. We need to make sure that a user is unable to change the <code>id</code> property of the item so that they can&rsquo;t create collisions. To solve this issue, we need to strip out all invalid keys from the submitted payload. But first, a few tests:</p>
+
+<pre><code class="javascript">describe('PUT /api/v1/produce/:id - update an item', () =&gt; {
+  it('allows updates to props other than id', () =&gt; {
+    return request(app).put('/api/v1/produce/1')
+    .send({ quantity: 20 })
+    .then((res) =&gt; {
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Success!');
+      expect(res.body.item.quantity).toBe(20);
+    });
+  });
+  it('rejects updates to id prop', () =&gt; {
+    return request(app).put('/api/v1/produce/1')
+    .send({ id: 10 })
+    .then((res) =&gt; {
+      expect(res.status).toBe(400);
+      expect(res.body.message.startsWith('Update failed')).toBe(true);
+    });
+  });
+});
+</code></pre>
+
+<p>Add the new handler to <code>ProduceRouter</code>:</p>
+
+<pre><code class="javascript">/**
+ * Update a Produce item by id.
+ */
+updateOneById(req: $Request, res: $Response): void {
+  const searchId: number | boolean = parseId(req.params);
+  const payload: any = parseUpdate(req.body);
+  let toUpdate: Produce = inventory.find(item =&gt; item.id === searchId);
+  if (toUpdate &amp;&amp; payload) {
+    Object.keys(payload).forEach((key) =&gt; {
+      if (key === 'quantity' || key === 'price') toUpdate[key] = Number(payload[key]);
+      else toUpdate[key] = payload[key];
+    });
+    res.json({
+      status: res.status,
+      message: 'Success!',
+      item: toUpdate
+    });
+    saveInventory(inventory)
+    .then((writePath) =&gt; {
+      logger(`Item updated. Inventory written to:\n\t${path.relative(path.join(__dirname, '..', '..'), writePath)}`);
+    })
+    .catch((err) =&gt; {
+      logger('Error writing to inventory file.');
+      logger(err.stack);
+    });
+  } else {
+    res.status(400).json({
+      status: res.status,
+      message: 'Update failed. Make sure the item ID and submitted fields are correct.'
+    });
+  }
+}
+</code></pre>
+
+<p>Then, within <em>parsers.js</em>, add the <code>parseId()</code> and <code>parseUpdate()</code> helpers, which are used to clean the payload and requested item ID:</p>
+
+<pre><code class="javascript">export function parseUpdate(input: any): any | null {
+  const validKeys = ['name', 'quantity', 'price'];
+  const trimmed = Object.keys(input).reduce((obj, curr) =&gt; {
+    if (obj &amp;&amp; validKeys.indexOf(curr) !== -1) {
+      obj[curr] = input[curr];
+      return obj;
+    }
+  }, {});
+  return (trimmed &amp;&amp; Object.keys(trimmed).length &gt; 0) ? trimmed : null;
+}
+
+export function parseId(input: any): number | boolean {
+  if (input.hasOwnProperty('id'))
+    return (typeof input.id === 'string') ? parseInt(input.id, 10) : input.id;
+  return false;
+}
+</code></pre>
+
+<p>These are fairly straightforward. <code>parseUpdate</code> takes in the payload from the request, and strips out any keys that are not <code>name</code>, <code>quantity</code>, or <code>price</code>. Then it just simply returns the trimmed object if there&rsquo;s still keys left, and <code>null</code> if not. <code>parseId</code> is even simpler: It looks for an <code>id</code> property on the payload, converts it to a number (if necessary), and returns.</p>
+
+<p>Update the import in <em>ProduceRouter.js</em>:</p>
+
+<pre><code class="javascript">import { parseProduce, parseUpdate, parseId } from '../util/parsers';
+</code></pre>
+
+<p>Then update the <code>init()</code>:</p>
+
+<pre><code class="javascript">/**
+ * Attach route handlers to their endpoints.
+ */
+init(): void {
+  this.router.get('/', this.getAll);
+  this.router.get('/:id', this.getById);
+  this.router.post('/', this.postOne);
+  this.router.put('/:id', this.updateOneById);
+}
+</code></pre>
+
+<p>Run the tests again and ensure they pass. One more route to go!</p>
+
+<h3>DELETE - Remove an Item</h3>
+
+<p>This route will allow for deleting an item from the inventory by passing a valid <code>id</code> as a URL parameter. This is the same string route that the <code>getById</code> and <code>updateOneById</code> functions handle, but will use the <code>DELETE</code> HTTP method. Here&rsquo;s a few basic tests:</p>
+
+<pre><code class="javascript">describe('DELETE /api/v1/produce/:id - delete an item', () =&gt; {
+  it('deletes when given a valid ID', () =&gt; {
+    return request(app).delete('/api/v1/produce/4')
+    .then((res) =&gt; {
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Success!');
+      expect(res.body.deleted.id).toBe(4);
+    });
+  });
+  it('responds w/ error if given invalid ID', () =&gt; {
+    return Promise.all([-2, 100].map((id) =&gt; {
+      return request(app).delete(`/api/v1/produce/${id}`)
+      .then((res) =&gt; {
+        expect(res.status).toBe(400);
+        expect(res.body.message).toBe('No item found with given ID.');
+      });
+    }));
+  });
+});
+</code></pre>
+
+<p>Ensure those fail, and then add the implementation for the handler to <code>ProduceRouter</code> as <code>removeById</code>:</p>
+
+<pre><code class="javascript">/**
+ * Remove an item from the inventory by ID.
+ */
+removeById(req: $Request, res: $Response): void {
+  const searchId: number | boolean = parseId(req.params);
+  let toDel: number = inventory.findIndex(item =&gt; item.id === searchId);
+  if (toDel !== -1) {
+    let deleted = inventory.splice(toDel, 1)[0];
+    res.json({
+      status: 200,
+      message: 'Success!',
+      deleted
+    });
+    // update json file
+    saveInventory(inventory)
+    .then((writePath) =&gt; {
+      logger(`Item deleted. Inventory written to:\n\t${writePath}`);
+    })
+    .catch((err) =&gt; {
+      logger('Error writing to inventory file.');
+      logger(err.stack);
+    });
+  } else {
+    res.status(400).json({
+      status: 400,
+      message: 'No item found with given ID.'
+    });
+  }
+}
+</code></pre>
+
+<p>This obviously looks pretty similar to most of the other handlers. The only difference being that once we get a valid <code>id</code>, we search for the object it matches in the inventory, get its index, and then splice it out of the inventory array.</p>
+
+<p>Don&rsquo;t forget the handler:</p>
+
+<pre><code class="javascript">this.router.delete('/:id', this.removeById);
+</code></pre>
+
+<p>Run the tests one last time:</p>
+
+<pre><code>PASS  __tests__/ProduceRouter.test.js
+ Flow API
+   ✓ allows updates to props other than id (4ms)
+   GET /api/v1/produce - get all produce
+     ✓ should return JSON array (50ms)
+     ✓ should return objs w/ correct props (11ms)
+     ✓ shouldn't return objs w/ extra props (18ms)
+   GET /api/v1/produce/:id - get produce item by id
+     ✓ should return an obj of type Produce (8ms)
+     ✓ should return a Produce w/ requested id (6ms)
+     ✓ should 400 on a request for a nonexistant id (9ms)
+   POST /api/v1/produce - create new item
+     ✓ should accept and add a valid new item (27ms)
+     ✓ should reject post w/o name, price, or quantity (9ms)
+   PUT /api/v1/produce/:id - update an item
+     ✓ allows updates to props other than id (6ms)
+     ✓ rejects updates to id prop (7ms)
+   DELETE /api/v1/produce/:id - delete an item
+     ✓ deletes when given a valid ID (4ms)
+     ✓ responds w/ error if given invalid ID (11ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        2.322s
+Ran all test suites.
+</code></pre>
+
+<p>Congratulations! You just built an Express API type checked with Flow!</p>
+
+<h2>Conclusion</h2>
+
+<p>All in all, working with Flow is interesting, at the very least.</p>
+
+<p>After using both it and TypeScript, Flow&rsquo;s type checking tends to be more strict, but you also spend more time trying to figure out what Flow is getting at and how to fix errors. Part of this is probably that the tooling support for TypeScript is vastly superior. Flow offers a lot of the same functionality that TypeScript does, but there&rsquo;s a TypeScript tool for every single thing you could ever want. It simply isn&rsquo;t the same for Flow. The community doesn&rsquo;t seem to have embraced it with as much enthusiasm. The number of libdefs in the <code>flow-typed</code> repository versus <code>DefinitelyTyped</code> for TypeScript is tiny. This is probably the biggest problem you&rsquo;d have to face in choosing to use Flow for static type analysis over TypeScript.</p>
+
+<p>That being said, Flow also offers some distinct advantages.</p>
+
+<p>It&rsquo;s plug-n-play with Babel, so adding Flow to a project using Babel would probably be much less painful than converting it to use TypeScript. Both allow you to do so bit by bit, but Flow handles this more gracefully. TypeScript would usually like to just have you pass everything through the compiler and deal with the type errors as you can. Flow allows you to annotate <em>only</em> the files you want to type check, so adding it to an existing project is much easier. Actually, this is probably the best use case for Flow. It would be cumbersome to start a brand new project with such strict type checking. It definitely slows down the rapid iteration needed at the beginning of a project&rsquo;s life. However, once the project gets to a certain size it&rsquo;s easy to drop in Flow and clean up the errors file by file as you move forward.</p>
+
+<p>You can grab the code from the <a href="https://github.com/mjhea0/flow-node-api">flow-node-api</a> repo. Best!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Developing a RESTful API With Node and TypeScript]]></title>
@@ -3655,363 +4793,6 @@ module.exports = {
 <p>The testing process may seem daunting and unnecessary at first, but you will soon just how necessary they are as your projects grow and become more complex. Continue to practice testing by incorporating tests whenever you begin a new project.</p>
 
 <p>The full code can be found in the <a href="https://github.com/mjhea0/express-testing-mocha-knex">express-testing-mocha-knex</a> repository.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Swagger and NodeJS]]></title>
-    <link href="http://mherman.org/blog/2016/05/26/swagger-and-nodejs/"/>
-    <updated>2016-05-26T07:22:46-06:00</updated>
-    <id>http://mherman.org/blog/2016/05/26/swagger-and-nodejs</id>
-    <content type="html"><![CDATA[<p><strong>This tutorial details how to describe a RESTFul API using <a href="http://swagger.io/">Swagger</a> along with Node and Express.</strong></p>
-
-<div style="text-align:center;">
-  <img src="http://mherman.org/images/node-swagger.png" style="max-width: 100%; border:0; box-shadow: none;" alt="node swagger api">
-</div>
-
-
-<p><br></p>
-
-<p>By the end of this tutorial, you will be able to&hellip;</p>
-
-<ol>
-<li>Describe the purpose of Swagger</li>
-<li>Generate a <a href="http://swagger.io/specification/">Swagger Spec</a> based on an existing RESTful API developed with Node, Express, and Postgres</li>
-<li>Set up the <a href="https://github.com/swagger-api/swagger-ui">Swagger UI</a> for testing and interacting with the API</li>
-</ol>
-
-
-<h2>Swagger</h2>
-
-<p>Swagger is a <a href="http://swagger.io/specification/">specification</a> for describing, producing, consuming, testing, and visualizing a RESTful API. It provides a number of <a href="http://swagger.io/tools/">tools</a> for automatically generating documentation based on a given endpoint.</p>
-
-<p>Now when you make changes to your code, your documentation is updated and synchronized with the API so that consumers can quickly learn which resources are available, how to access them, and what to expect (status code, content-type, etc.) when interacting with the various endpoints.</p>
-
-<h2>Getting Started</h2>
-
-<h3>Starting a New Project</h3>
-
-<p>If you&rsquo;re starting a new project, you can easily generate the <a href="http://swagger.io/specification/">Swagger Specification</a> and project boilerplate using the <a href="http://swagger.io/swagger-editor/">Swagger Editor</a>. Test it out <a href="http://editor.swagger.io/#/">here</a>.</p>
-
-<p>If you don&rsquo;t like the generated project structure, you can just export the JSON (or YAML) spec file and then use a custom generator, like <a href="https://github.com/krakenjs/swaggerize-express">Swaggerize Express</a>, to generate the boilerplate. Then when you need to make changes to the API, you can just update the spec file. Simple.</p>
-
-<h3>Updating an Existing Project</h3>
-
-<p>For this tutorial, we will be generating the Swagger spec based on the code from a previously created project that has the following RESTful endpoints:</p>
-
-<table style="font-size:18px;border-spacing:12px 0px;border-collapse:separate;border:1px solid black;">
-<thead>
-<tr>
-<th style="text-align:center"><strong>URL</strong></th>
-<th style="text-align:center"><strong>HTTP Verb</strong></th>
-<th style="text-align:center"><strong>Action</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>/api/puppies</td>
-<td>GET</td>
-<td>Return ALL puppies</td>
-</tr>
-<tr>
-<td>/api/puppies/:id</td>
-<td>GET</td>
-<td>Return a SINGLE puppy</td>
-</tr>
-<tr>
-<td>/api/puppies</td>
-<td>POST</td>
-<td>Add a puppy</td>
-</tr>
-<tr>
-<td>/api/puppies/:id</td>
-<td>PUT</td>
-<td>Update a puppy</td>
-</tr>
-<tr>
-<td>/api/puppies/:id</td>
-<td>DELETE</td>
-<td>Delete a puppy</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>Clone down the project:</p>
-
-<pre><code class="sh">$ git clone https://github.com/mjhea0/node-postgres-promises.git node-swagger-api
-$ cd node-swagger-api
-$ git checkout tags/v1 -b swagger
-$ npm install
-</code></pre>
-
-<blockquote><p>Want to learn how this project was created? Check out the <a href="http://mherman.org/blog/2016/03/13/designing-a-restful-api-with-node-and-postgres/#.V0N4PZMrJE4">Designing a RESTful API With Node and Postgres</a> post.</p></blockquote>
-
-<p>This project uses Postgres, so run create the database and apply the schema:</p>
-
-<pre><code class="sh">$ psql -f puppies.sql
-</code></pre>
-
-<p>Run the server, and then navigate to <a href="http://localhost:3000/api/puppies">http://localhost:3000/api/puppies</a> in your browser of choice. You should see:</p>
-
-<pre><code class="json">{
-  status: "success",
-  data: [
-    {
-      id: 1,
-      name: "Tyler",
-      breed: "Shih-tzu",
-      age: 3,
-      sex: "M"
-    }
-  ],
-  message: "Retrieved ALL puppies"
-}
-</code></pre>
-
-<p>Test out each endpoint to make sure everything works before moving on.</p>
-
-<h2>Generating the Swagger Spec</h2>
-
-<p>To generate the <a href="http://swagger.io/specification/">Swagger specification</a>, we will be using <a href="https://github.com/Surnet/swagger-jsdoc">swagger-jsdoc</a>.</p>
-
-<p>Install swagger-jsdoc:</p>
-
-<pre><code class="sh">$ npm install swagger-jsdoc@1.3.0 --save
-</code></pre>
-
-<p>Add the requirement to <em>app.js</em>:</p>
-
-<pre><code class="javascript">var swaggerJSDoc = require('swagger-jsdoc');
-</code></pre>
-
-<p>Then add the following code to <em>app.js</em> just below <code>var app = express();</code>:</p>
-
-<pre><code class="javascript">// swagger definition
-var swaggerDefinition = {
-  info: {
-    title: 'Node Swagger API',
-    version: '1.0.0',
-    description: 'Demonstrating how to describe a RESTful API with Swagger',
-  },
-  host: 'localhost:3000',
-  basePath: '/',
-};
-
-// options for the swagger docs
-var options = {
-  // import swaggerDefinitions
-  swaggerDefinition: swaggerDefinition,
-  // path to the API docs
-  apis: ['./routes/*.js'],
-};
-
-// initialize swagger-jsdoc
-var swaggerSpec = swaggerJSDoc(options);
-</code></pre>
-
-<p>Take note of the comments above. This code essentially initializes swagger-jsdoc and adds the appropriate metadata to the Swagger specification.</p>
-
-<p>Add the route to serve up the Swagger spec:</p>
-
-<pre><code class="javascript">// serve swagger
-app.get('/swagger.json', function(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
-</code></pre>
-
-<p>Fire up the server and navigate to <a href="http://localhost:3000/swagger.json">http://localhost:3000/swagger.json</a> to see the basic spec:</p>
-
-<pre><code class="json">{
-  info: {
-    title: "Node Swagger API",
-    version: "1.0.0",
-    description: "Demonstrating how to describe a RESTful API with Swagger"
-  },
-  host: "localhost:3000",
-  basePath: "/",
-  swagger: "2.0",
-  paths: { },
-  definitions: { },
-  responses: { },
-  parameters: { },
-  securityDefinitions: { }
-}
-</code></pre>
-
-<p>Now we need to update the routes&hellip;</p>
-
-<h2>Updating the Route Handlers</h2>
-
-<p>swagger-jsdoc uses <a href="http://usejsdoc.org/">JSDoc</a>-style comments to generate the Swagger spec. So, add such comments, in YAML, to the route handlers that describe their functionality.</p>
-
-<h3>GET ALL</h3>
-
-<p>Add the comments in <em>/routes/index.js</em> just above the handler, like so:</p>
-
-<pre><code class="javascript">/**
- * @swagger
- * /api/puppies:
- *   get:
- *     tags:
- *       - Puppies
- *     description: Returns all puppies
- *     produces:
- *       - application/json
- *     responses:
- *       200:
- *         description: An array of puppies
- *         schema:
- *           $ref: '#/definitions/Puppy'
- */
-router.get('/api/puppies', db.getAllPuppies);
-</code></pre>
-
-<p>This should be fairly self-explanatory. We have an <code>/api/puppies</code> endpoint that returns a 200 response to a GET request. The <code>$ref</code> is used to re-use definitions to keep the code DRY.</p>
-
-<p>Add the following code above the previous code:</p>
-
-<pre><code class="javascript">/**
- * @swagger
- * definition:
- *   Puppy:
- *     properties:
- *       name:
- *         type: string
- *       breed:
- *         type: string
- *       age:
- *         type: integer
- *       sex:
- *         type: string
- */
-</code></pre>
-
-<p>Now we can use that definition for each of the HTTP methods.</p>
-
-<p>For more information and examples, please see the <a href="http://swagger.io/specification/">Swagger Specification</a>.</p>
-
-<h3>GET Single</h3>
-
-<pre><code class="javascript">/**
- * @swagger
- * /api/puppies/{id}:
- *   get:
- *     tags:
- *       - Puppies
- *     description: Returns a single puppy
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: id
- *         description: Puppy's id
- *         in: path
- *         required: true
- *         type: integer
- *     responses:
- *       200:
- *         description: A single puppy
- *         schema:
- *           $ref: '#/definitions/Puppy'
- */
-</code></pre>
-
-<h3>POST</h3>
-
-<pre><code class="javascript">/**
- * @swagger
- * /api/puppies:
- *   post:
- *     tags:
- *       - Puppies
- *     description: Creates a new puppy
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: puppy
- *         description: Puppy object
- *         in: body
- *         required: true
- *         schema:
- *           $ref: '#/definitions/Puppy'
- *     responses:
- *       200:
- *         description: Successfully created
- */
-</code></pre>
-
-<h3>PUT</h3>
-
-<pre><code class="javascript">/**
- * @swagger
- * /api/puppies/{id}:
- *   put:
- *     tags: Puppies
- *     description: Updates a single puppy
- *     produces: application/json
- *     parameters:
- *       name: puppy
- *       in: body
- *       description: Fields for the Puppy resource
- *       schema:
- *         type: array
- *         $ref: '#/definitions/Puppy'
- *     responses:
- *       200:
- *         description: Successfully updated
- */
-</code></pre>
-
-<h3>DELETE</h3>
-
-<pre><code class="javascript">/**
- * @swagger
- * /api/puppies/{id}:
- *   delete:
- *     tags:
- *       - Puppies
- *     description: Deletes a single puppy
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: id
- *         description: Puppy's id
- *         in: path
- *         required: true
- *         type: integer
- *     responses:
- *       200:
- *         description: Successfully deleted
- */
-</code></pre>
-
-<p>Check out the updated spec at <a href="http://localhost:3000/swagger.json">http://localhost:3000/swagger.json</a>.</p>
-
-<h2>Adding Swagger UI</h2>
-
-<p>Finally, download the <a href="https://github.com/swagger-api/swagger-ui">Swagger UI repo</a>, add the &ldquo;dist&rdquo; folder from the downloaded repo to the &ldquo;public&rdquo; folder in the project directory, and then rename the directory to &ldquo;api-docs&rdquo;.</p>
-
-<p>Now within <em>index.html</em> inside the &ldquo;api-docs&rdquo; directory just update this line-</p>
-
-<pre><code class="html">url = "http://petstore.swagger.io/v2/swagger.json";
-</code></pre>
-
-<p>To-</p>
-
-<pre><code class="html">url = "http://localhost:3000/swagger.json";
-</code></pre>
-
-<p>Finally, navigate to <a href="http://localhost:3000/api-docs/">http://localhost:3000/api-docs/</a> in your browser to test out the API endpoints:</p>
-
-<div style="text-align:center;">
-  <img src="http://mherman.org/images/swagger-ui.png" style="max-width: 100%; border:0; box-shadow: none;" alt="Swagger UI">
-</div>
-
-
-<p><br><hr><br></p>
-
-<p>Download the <a href="https://github.com/mjhea0/node-swagger-api">code</a> from the repo. Cheers!</p>
 ]]></content>
   </entry>
   

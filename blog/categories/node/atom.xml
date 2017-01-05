@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2016-12-23T05:09:36-07:00</updated>
+  <updated>2017-01-05T08:08:25-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -2454,6 +2454,8 @@ exports.seed = (knex, Promise) =&gt; {
 
 
 <p>Feel free to share your comments, questions, or tips in the comments below. The full code can be found in the <a href="https://github.com/mjhea0/node-token-auth">node-token-auth</a> repository. Cheers!</p>
+
+<blockquote><p>Check out the <a href="https://news.ycombinator.com/item?id=13301105">HN Discussion</a> as well!</p></blockquote>
 
 <p>Did you enjoy this post? Please share. Sharing is caring.</p>
 ]]></content>

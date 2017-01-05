@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-01-05T08:08:25-07:00</updated>
+  <updated>2017-01-05T08:13:43-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -2452,6 +2452,8 @@ exports.seed = (knex, Promise) =&gt; {
 <li>Client then sends token to server on subsequent requests</li>
 </ol>
 
+
+<p><em>New post is up, showing the client-side workflow: <a href="http://mherman.org/blog/2017/01/05/token-based-authentication-with-angular">Token-Based Authentication With Angular</a>!</em></p>
 
 <p>Feel free to share your comments, questions, or tips in the comments below. The full code can be found in the <a href="https://github.com/mjhea0/node-token-auth">node-token-auth</a> repository. Cheers!</p>
 

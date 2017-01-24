@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-01-20T09:22:56-07:00</updated>
+  <updated>2017-01-23T18:32:13-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1534,14 +1534,14 @@ const expect = chai.expect;
 describe('baseRoute', () =&gt; {
 
   it('should be json', () =&gt; {
-    chai.request(app).get('/')
+    return chai.request(app).get('/')
     .then(res =&gt; {
       expect(res.type).to.eql('application/json');
     });
   });
 
   it('should have a message prop', () =&gt; {
-    chai.request(app).get('/')
+    return chai.request(app).get('/')
     .then(res =&gt; {
       expect(res.body.message).to.eql('Hello World!');
     });

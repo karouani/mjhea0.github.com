@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Angular | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/angular/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-01-23T18:32:13-07:00</updated>
+  <updated>2017-01-24T07:20:27-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -3025,7 +3025,7 @@ Add a new controller:
 </span><span class='line'>&lt;ol&gt;
 </span><span class='line'>&lt;li&gt;You should handle those errors in each &lt;code&gt;.catch&lt;/code&gt;.&lt;/li&gt;
 </span><span class='line'>&lt;li&gt;Check out &lt;a href="https://github.com/sahat/satellizer"&gt;Satellizer&lt;/a&gt;. It&rsquo;s a nice token-based auth module for Angular. You can find sample code in the following repos - &lt;a href="https://github.com/mjhea0/mean-token-auth"&gt;mean-token-auth&lt;/a&gt; and &lt;a href="https://github.com/mjhea0/mean-social-token-auth"&gt;mean-social-token-auth&lt;/a&gt;.&lt;/li&gt;
-</span><span class='line'>&lt;li&gt;Try using this app with a different back-end. Since this app is just the client, you can literally use any language/framework to write a RESTful API in.&lt;/li&gt;
+</span><span class='line'>&lt;li&gt;Try using this app with a different back-end. Since this app is just the client, you can literally use any language/framework to write a RESTful API in. Want to try Python and Flask? Check out &lt;a href="https://realpython.com/blog/python/token-based-authentication-with-flask/"&gt;Token-Based Authentication With Flask&lt;/a&gt;.&lt;/li&gt;
 </span><span class='line'>&lt;/ol&gt;
 </span><span class='line'>
 </span><span class='line'>

@@ -165,14 +165,14 @@
 
 <p><br></p>
 
-<blockquote><p>This tutorial uses the following tools and technologies - Node.js v<a href="https://nodejs.org/en/blog/release/v4.3.1/">4.3.1</a>, express-generator v<a href="https://github.com/expressjs/generator/releases/tag/v4.13.1">4.13.1</a>, pg-promise v<a href="https://github.com/vitaly-t/pg-promise/releases/tag/v.3.2.3">3.2.3</a>, PostgreSQL v<a href="http://www.postgresql.org/docs/9.4/static/release.html">9.4</a>, and Bluebird v<a href="http://bluebirdjs.com">3.3.4</a></p></blockquote>
+<blockquote><p>This tutorial uses the following tools and technologies - Node.js v<a href="https://nodejs.org/dist/v4.7.2/">4.x</a>, <a href="https://github.com/expressjs/generator">express-generator v4.x</a>, <a href="https://github.com/vitaly-t/pg-promise">pg-promise v5.x</a>, PostgreSQL v<a href="http://www.postgresql.org/docs/9.4/static/release.html">9.4</a>, and <a href="http://bluebirdjs.com">Bluebird v3.x</a></p></blockquote>
 
 <h2>Project setup</h2>
 
 <p>Install the Express Generator (if necessary):</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install express-generator@4.13.1 -g
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install express-generator@4 -g
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -199,7 +199,7 @@
 <p>Install <code>pg-promise</code></p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install pg-promise@3.2.3 --save
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install pg-promise@5 --save
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -259,7 +259,7 @@
 <p>Don&rsquo;t forget to install Bluebird:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install bluebird@3.3.4 --save
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>npm install bluebird@3 --save
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -421,18 +421,18 @@
 <span class='line-number'>12</span>
 <span class='line-number'>13</span>
 </pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="err">status:</span> <span class="nt">&quot;success&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">data:</span> <span class="err">[</span>
-</span><span class='line'>    <span class="err">{</span>
-</span><span class='line'>      <span class="err">id:</span> <span class="err">1,</span>
-</span><span class='line'>      <span class="err">name:</span> <span class="nt">&quot;Tyler&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="err">breed:</span> <span class="nt">&quot;Shih-tzu&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="err">age:</span> <span class="err">3,</span>
-</span><span class='line'>      <span class="err">sex:</span> <span class="nt">&quot;M&quot;</span>
+</span><span class='line'>  <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Tyler&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;breed&quot;</span><span class="p">:</span> <span class="s2">&quot;Shih-tzu&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;age&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;sex&quot;</span><span class="p">:</span> <span class="s2">&quot;M&quot;</span>
 </span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="err">],</span>
-</span><span class='line'>  <span class="err">message:</span> <span class="s2">&quot;Retrieved ALL puppies&quot;</span>
-</span><span class='line'><span class="err">}</span>
+</span><span class='line'>  <span class="p">],</span>
+</span><span class='line'>  <span class="nt">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Retrieved ALL puppies&quot;</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -485,16 +485,16 @@
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
 </pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="err">status:</span> <span class="nt">&quot;success&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="err">data:</span> <span class="err">{</span>
-</span><span class='line'>    <span class="err">id:</span> <span class="err">1,</span>
-</span><span class='line'>    <span class="err">name:</span> <span class="nt">&quot;Tyler&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="err">breed:</span> <span class="nt">&quot;Shih-tzu&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="err">age:</span> <span class="err">3,</span>
-</span><span class='line'>    <span class="err">sex:</span> <span class="nt">&quot;M&quot;</span>
-</span><span class='line'>  <span class="p">}</span><span class="err">,</span>
-</span><span class='line'>  <span class="err">message:</span> <span class="s2">&quot;Retrieved ONE puppy&quot;</span>
-</span><span class='line'><span class="err">}</span>
+</span><span class='line'>  <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Tyler&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;breed&quot;</span><span class="p">:</span> <span class="s2">&quot;Shih-tzu&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;age&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;sex&quot;</span><span class="p">:</span> <span class="s2">&quot;M&quot;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Retrieved ONE puppy&quot;</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -714,6 +714,8 @@
 <p>We now have a basic RESTful API built with Node, Express, and pg-promise. Be sure to comment below if you have any questions.</p>
 
 <p>Grab the code from the <a href="https://github.com/mjhea0/node-postgres-promises">repo</a>.</p>
+
+<blockquote><p><strong>NOTE</strong>: Check out <a href="https://github.com/vitaly-t/pg-promise-demo">pg-promise-demo</a> for a more comprehensive example of setting up your database layer.</p></blockquote>
 </div>
 
 

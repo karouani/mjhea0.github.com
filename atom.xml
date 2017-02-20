@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-02-16T22:31:22-07:00</updated>
+  <updated>2017-02-20T07:00:57-07:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -10267,7 +10267,7 @@ for our unit tests. Such data is often called a <a href="https://en.wikipedia.or
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now every single route in that file will be prefixed with &lsquo;/api/v1&rsquo; Try it out. Fire up the server, and navigate to <a href="http://localhost:3000/api/v1/shows">http://localhost:3000/api/v1shows</a>. You should see the string &lsquo;send shows back&rsquo; in the browser.</p>
+<p>Now every single route in that file will be prefixed with &lsquo;/api/v1&rsquo; Try it out. Fire up the server, and navigate to <a href="http://localhost:3000/api/v1/shows">http://localhost:3000/api/v1/shows</a>. You should see the string &lsquo;send shows back&rsquo; in the browser.</p>
 
 <p>Finally, update this line in <em>app.js</em>-</p>
 

@@ -127,6 +127,13 @@
 
 <p>Additionally, we will use <em><a href="https://www.typescriptlang.org/docs/handbook/tsconfig-json.html">tsconfig.json</a></em> to configure the project, <a href="http://gulpjs.com/">Gulp</a> to automate <a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpilation</a>, and <a href="https://github.com/typings/typings">d.ts</a> for managing typings with <code>npm</code>.</p>
 
+<p>Updates:</p>
+
+<ul>
+<li>03/12/2017: Updated the <em>gulpfile.js</em> and <em>package.json</em></li>
+</ul>
+
+
 <h2>Contents</h2>
 
 <ol>
@@ -296,8 +303,15 @@
 <span class='line-number'>15</span>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
 </pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">const</span> <span class="nx">gulp</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;gulp&#39;</span><span class="p">);</span>
 </span><span class='line'><span class="kr">const</span> <span class="nx">ts</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;gulp-typescript&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kr">const</span> <span class="nx">JSON_FILES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;src/*.json&#39;</span><span class="p">,</span> <span class="s1">&#39;src/**/*.json&#39;</span><span class="p">];</span>
 </span><span class='line'>
 </span><span class='line'><span class="c1">// pull in the project TypeScript config</span>
 </span><span class='line'><span class="kr">const</span> <span class="nx">tsProject</span> <span class="o">=</span> <span class="nx">ts</span><span class="p">.</span><span class="nx">createProject</span><span class="p">(</span><span class="s1">&#39;tsconfig.json&#39;</span><span class="p">);</span>
@@ -312,7 +326,12 @@
 </span><span class='line'>  <span class="nx">gulp</span><span class="p">.</span><span class="nx">watch</span><span class="p">(</span><span class="s1">&#39;src/**/*.ts&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;scripts&#39;</span><span class="p">]);</span>
 </span><span class='line'><span class="p">});</span>
 </span><span class='line'>
-</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;watch&#39;</span><span class="p">]);</span>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;assets&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="nx">JSON_FILES</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">gulp</span><span class="p">.</span><span class="nx">dest</span><span class="p">(</span><span class="s1">&#39;dist&#39;</span><span class="p">));</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;watch&#39;</span><span class="p">,</span> <span class="s1">&#39;assets&#39;</span><span class="p">]);</span>
 </span></code></pre></td></tr></table></div></figure>
 
 

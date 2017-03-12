@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-02-20T07:00:57-07:00</updated>
+  <updated>2017-03-12T14:05:23-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1169,6 +1169,13 @@ Ran all test suites.
 
 <p>Additionally, we will use <em><a href="https://www.typescriptlang.org/docs/handbook/tsconfig-json.html">tsconfig.json</a></em> to configure the project, <a href="http://gulpjs.com/">Gulp</a> to automate <a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpilation</a>, and <a href="https://github.com/typings/typings">d.ts</a> for managing typings with <code>npm</code>.</p>
 
+<p>Updates:</p>
+
+<ul>
+<li>03/12/2017: Updated the <em>gulpfile.js</em> and <em>package.json</em></li>
+</ul>
+
+
 <h2>Contents</h2>
 
 <ol>
@@ -1281,6 +1288,7 @@ $ npm install typescript@2.0.6 --save-dev
 
 <pre><code class="javascript">const gulp = require('gulp');
 const ts = require('gulp-typescript');
+const JSON_FILES = ['src/*.json', 'src/**/*.json'];
 
 // pull in the project TypeScript config
 const tsProject = ts.createProject('tsconfig.json');
@@ -1295,7 +1303,12 @@ gulp.task('watch', ['scripts'], () =&gt; {
   gulp.watch('src/**/*.ts', ['scripts']);
 });
 
-gulp.task('default', ['watch']);
+gulp.task('assets', function() {
+  return gulp.src(JSON_FILES)
+  .pipe(gulp.dest('dist'));
+});
+
+gulp.task('default', ['watch', 'assets']);
 </code></pre>
 
 <p>To test this out, remove <em>dist/test.js</em> and run <code>gulp</code> from the project root. You&rsquo;ll see Gulp start up, and <em>test.js</em> should be compiled again and placed into &ldquo;dist&rdquo;. Awesome! Our project is now configured.</p>

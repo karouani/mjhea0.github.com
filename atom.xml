@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-03-19T18:00:06-06:00</updated>
+  <updated>2017-03-20T07:00:41-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -168,7 +168,7 @@
 
 <p>Make sense? No? Continue to run the test and review the above steps until it does. Make sure you understand what&rsquo;s happening before moving on.</p>
 
-<h2>Tests</h2>
+<h2>Writing Tests</h2>
 
 <p>Add a new file called <em>jobs.js</em> to the &ldquo;tests&rdquo; folder:</p>
 

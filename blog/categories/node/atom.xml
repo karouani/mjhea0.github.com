@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-03-12T14:07:15-06:00</updated>
+  <updated>2017-03-19T18:00:06-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,457 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Functional Testing With TestCafe]]></title>
+    <link href="http://mherman.org/blog/2017/03/19/functional-testing-with-testcafe/"/>
+    <updated>2017-03-19T16:37:53-06:00</updated>
+    <id>http://mherman.org/blog/2017/03/19/functional-testing-with-testcafe</id>
+    <content type="html"><![CDATA[<p>Today we are going to dive into the world of functional web testing with <a href="https://devexpress.github.io/testcafe/">TestCafe</a>.</p>
+
+<p>Unlike the majority of other end-to-end (e2e) testing tools, TestCafe is not dependent on Selenium or WebDriver. Instead, it injects scripts into the browser to communicate directly with the DOM and handle events. It works on any modern browser that supports HTML5 without any plugins. Further, it supports all major operating systems and can run simultaneously on multiple browsers and machines.</p>
+
+<p>We will be using:</p>
+
+<ul>
+<li>TestCafe v<a href="https://github.com/DevExpress/testcafe/releases/tag/v0.13.0">0.13.0</a></li>
+<li>Chrome v<a href="https://chromereleases.googleblog.com/2017/03/stable-channel-update-for-desktop.html">57</a></li>
+<li>NodeJS v<a href="https://nodejs.org/docs/v7.6.0/api/all.html">7.6.0</a></li>
+</ul>
+
+
+<p>Please review the <a href="http://devexpress.github.io/testcafe/documentation/getting-started/">Getting Started</a> guide before beginning.</p>
+
+<h2>Contents</h2>
+
+<ol>
+<li>Objectives</li>
+<li>Project Setup</li>
+<li>Writing Tests</li>
+<li>Browser Support</li>
+<li>Continuous Integration</li>
+<li>Next Steps</li>
+</ol>
+
+
+<h2>Objectives</h2>
+
+<p>By the end of this tutorial, you should be able to&hellip;</p>
+
+<ol>
+<li>Set up TestCafe with an existing Node app</li>
+<li>Write TestCafe tests using the <a href="https://martinfowler.com/bliki/PageObject.html">PageObject</a> pattern</li>
+<li>Test a Node application with functional tests</li>
+<li>Integrate TestCafe into a continuous integration process</li>
+<li>Configure TestCafe to work with a headless browser</li>
+</ol>
+
+
+<h2>Project Setup</h2>
+
+<p>Start by cloning the base project structure:</p>
+
+<pre><code class="sh">$ git clone https://github.com/mjhea0/testcafe-example --branch v1 --single-branch -b master
+</code></pre>
+
+<p>Install the dependencies, and then fire up the app by running <code>npm start</code> to make sure all is well. Navigate to <a href="http://localhost:3000/">http://localhost:3000/</a> in your browser and you should see a list of jobs in HTML. Experiment with the app. Add a job. Update a job. Delete a job. This is what we will be testing. Kill the server when done.</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/node-jobs.png" style="max-width: 100%; border:0; box-shadow: none;" alt="node jobs">
+</div>
+
+
+<p>Install TestCafe:</p>
+
+<pre><code class="sh">$ npm install testcafe@0.13.0 --save-dev
+</code></pre>
+
+<p>With that, you can start running tests.</p>
+
+<blockquote><p><strong>NOTE:</strong> If you were using a Selenium-based testing tool you would need to install both Selenium and Web Driver, which can be difficult depending on your system setup.</p></blockquote>
+
+<p>Add a <code>test</code> command to the <code>scripts</code> in <em>package.json</em>:</p>
+
+<pre><code class="json">"scripts": {
+  "start": "node ./bin/www",
+  "test": "node_modules/testcafe/bin/testcafe.js chrome tests/"
+},
+</code></pre>
+
+<p>Here, we specified the path to TestCafe in our &ldquo;node_modules&rdquo; folder along with a <a href="http://devexpress.github.io/testcafe/documentation/using-testcafe/command-line-interface.html#browser-list">target browser</a>, <code>chrome</code>, and a  <a href="http://devexpress.github.io/testcafe/documentation/using-testcafe/command-line-interface.html#file-pathglob-pattern">path</a> to where all tests will be located, <code>tests/</code>.</p>
+
+<p>Now, you can use <code>npm test</code> to run TestCafe.</p>
+
+<p>Let&rsquo;s get a test set up. Add a &ldquo;tests&rdquo; folder to the project root, and add an <em>index.js</em> file to it:</p>
+
+<pre><code class="javascript">import { Selector } from 'testcafe';
+
+fixture('Getting Started')
+  .page('https://github.com');
+
+test('Find "testcafe-example" repo on GitHub', async (t) =&gt; {
+  const repo = Selector('.repo-list &gt; li &gt; div');
+  // search github
+  await t
+    .typeText('form[action="/search"]', 'testcafe-example user:mjhea0')
+    .pressKey('enter');
+  // check li for results
+  await t
+    .expect(repo.innerText).contains('mjhea0/testcafe-example');
+});
+</code></pre>
+
+<p>What&rsquo;s happening?</p>
+
+<ol>
+<li>Since <em>all</em> tests are organized into <a href="http://devexpress.github.io/testcafe/documentation/test-api/test-code-structure.html#fixtures">fixtures</a>, we started with a <code>fixture()</code> function.</li>
+<li>Next, we specified a start URL - <code>http://devexpress.github.io/testcafe/example</code> - via the <code>page()</code> <a href="http://devexpress.github.io/testcafe/documentation/test-api/test-code-structure.html#specifying-the-start-webpage">method</a>.</li>
+<li>From there, we added the test code into a <code>test()</code> <a href="http://devexpress.github.io/testcafe/documentation/test-api/test-code-structure.html#tests">function</a>, which takes an async function along with the <a href="http://devexpress.github.io/testcafe/documentation/test-api/test-code-structure.html#test-controller">test controller</a> object.</li>
+<li><code>await</code> is then used to wait for certain <a href="http://devexpress.github.io/testcafe/documentation/test-api/actions/">actions</a> to complete. In this case, we used <code>typeText()</code> and <code>pressKey()</code> to search GitHub.</li>
+<li>On the GitHub search results page, we used a <code>Selector()</code> <a href="http://devexpress.github.io/testcafe/documentation/test-api/selecting-page-elements/selectors.html">function</a> to parse the DOM.</li>
+<li>Finally, we asserted that the actual results contain the expected results.</li>
+</ol>
+
+
+<blockquote><p><strong>NOTE:</strong> If you&rsquo;re new to <a href="https://github.com/tc39/ecmascript-asyncawait">async/await</a>, check out <a href="https://ponyfoo.com/articles/understanding-javascript-async-await">Understanding JavaScript’s async await</a>.</p></blockquote>
+
+<p>Try this out! Run <code>npm test</code>. If all goes well Chrome should fire up and execute the test. Once done, you should see something like this in your terminal:</p>
+
+<pre><code class="sh">Running tests in:
+- Chrome 57.0.2987 / Mac OS X 10.11.6
+
+Getting Started
+✓ Find "testcafe-example" repo on GitHub
+</code></pre>
+
+<p>Make sense? No? Continue to run the test and review the above steps until it does. Make sure you understand what&rsquo;s happening before moving on.</p>
+
+<h2>Tests</h2>
+
+<p>Add a new file called <em>jobs.js</em> to the &ldquo;tests&rdquo; folder:</p>
+
+<pre><code class="javascript">import { Selector } from 'testcafe';
+
+fixture('Node Jobs')
+  .page('http://localhost:3000');
+
+test('All Jobs', async (t) =&gt; {
+
+});
+</code></pre>
+
+<p>Then update the <code>test</code> command in <em>package.json</em>:</p>
+
+<pre><code class="json">"test": "node_modules/testcafe/bin/testcafe.js chrome tests/jobs.js --app 'npm start'"
+</code></pre>
+
+<p><code>tests/jobs.js</code> ignores the example GitHub test found in <em>index.js</em> so that we can focus just on the tests added to <em>jobs.js</em>. The <code>--app</code> <a href="https://devexpress.github.io/testcafe/documentation/using-testcafe/command-line-interface.html#-a-command---app-command">option</a> is used to launch the Node app so that TestCafe can interact with it.</p>
+
+<p>Try it. You should see the page load in Chrome. With that, let&rsquo;s test each of our app&rsquo;s CRUD functions.</p>
+
+<h3>GET ALL Jobs</h3>
+
+<p>Update <em>jobs.js</em>:</p>
+
+<pre><code class="javascript">import { Selector } from 'testcafe';
+
+fixture('Node Jobs')
+  .page('http://localhost:3000');
+
+test('All Jobs', async (t) =&gt; {
+  const title = Selector('h1');
+  const tableRows = Selector('tbody &gt; tr');
+  const addJobButton = Selector('a.btn.btn-primary');
+  const firstJob = Selector('tbody &gt; tr').withText('Horse Whisperer');
+  // check title, add job button, table rows, and job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(addJobButton.innerText).eql('Add New Job')
+    .expect(tableRows.count).eql(3)
+    .expect(firstJob.exists).ok();
+});
+</code></pre>
+
+<p>What&rsquo;s happening? Review the code above, line by line. It should be fairly straightforward.  Turn to the <a href="https://devexpress.github.io/testcafe/documentation/test-api/selecting-page-elements/">docs</a> for help, adding comments as necessary.</p>
+
+<p>Run:</p>
+
+<pre><code class="sh">Node Jobs
+✓ All Jobs
+
+
+1 passed (0s)
+</code></pre>
+
+<p>Before moving on, refactor out the selectors so that they can be re-used by other test cases:</p>
+
+<pre><code class="javascript">import { Selector } from 'testcafe';
+
+// selectors
+const title = Selector('h1');
+const tableRows = Selector('tbody &gt; tr');
+const addJobButton = Selector('a.btn.btn-primary');
+const firstJob = Selector('tbody &gt; tr').withText('Horse Whisperer');
+
+fixture('Node Jobs')
+  .page('http://localhost:3000');
+
+test('All Jobs', async (t) =&gt; {
+  // check title, add job button, table rows, and job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(addJobButton.innerText).eql('Add New Job')
+    .expect(tableRows.count).eql(3)
+    .expect(firstJob.exists).ok();
+});
+</code></pre>
+
+<h3>Add Job</h3>
+
+<p>Start by adding a new <code>test()</code> function to <em>jobs.js</em>:</p>
+
+<pre><code class="javascript">test.only('New Job', async (t) =&gt; {
+
+});
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> Can you guess what <code>only()</code> does? Try running the tests to see. Please review the <a href="https://devexpress.github.io/testcafe/documentation/test-api/test-code-structure.html#skipping-tests">docs</a> for more info.</p></blockquote>
+
+<p>Think about the steps an end user has to go through to add a job:</p>
+
+<ol>
+<li>Click the add job button</li>
+<li>Fill out the form</li>
+<li>Submit the form</li>
+</ol>
+
+
+<p>Now, try this on your own, step by step, before looking at the solution&hellip;</p>
+
+<pre><code class="javascript">test.only('New Job', async (t) =&gt; {
+  // click add job button
+  await t
+    .click(addJobButton)
+    .expect(title.innerText).eql('Add Job');
+  // fill out form
+  await t
+    .typeText('input[name="title"]', 'Python Developer')
+    .typeText('textarea[name="description"]', 'Write some Python')
+    .typeText('input[name="company"]', 'Real Python')
+    .typeText('input[name="email"]', 'michael@realpython.com')
+    .click(submitButton)
+  // check title, table rows, and new job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(tableRows.count).eql(4)
+    .expect(Selector('tbody &gt; tr').withText('Python Developer').exists).ok();
+});
+</code></pre>
+
+<p>Make sure to add the selector to the top:</p>
+
+<pre><code class="javascript">const submitButton = Selector('button[type="submit"]');
+</code></pre>
+
+<p>Test it out. Then remove the <code>only()</code> and test again:</p>
+
+<pre><code class="sh">Node Jobs
+✓ All Jobs
+✓ New Job
+
+
+2 passed (4s)
+</code></pre>
+
+<p>What are we missing in this test?</p>
+
+<ol>
+<li>What happens if the cancel button is pressed?</li>
+<li>What if the end user does not enter data for all the fields?</li>
+<li>What if text is entered in the email field but it is not a valid email?</li>
+</ol>
+
+
+<p>Try testing for these on your own.</p>
+
+<h3>Update Job</h3>
+
+<p>Again, start by adding the boilerplate:</p>
+
+<pre><code class="javascript">test('Update Job', async (t) =&gt; {
+
+});
+</code></pre>
+
+<p>Then write out the steps the end user has to take before writing any code:</p>
+
+<ol>
+<li>Click the update button</li>
+<li>Fill out the form</li>
+<li>Submit the form</li>
+</ol>
+
+
+<pre><code class="javascript">test('Update Job', async (t) =&gt; {
+  // click update button
+  await t
+    .click(firstJob.find('a.btn.btn-warning'))
+    .expect(title.innerText).eql('Update Job');
+  // fill out form
+  await t
+    .typeText('input[name="title"]', 'testing an update', {replace: true})
+    .typeText('textarea[name="description"]', 'test', {replace: true})
+    .typeText('input[name="company"]', 'test', {replace: true})
+    .typeText('input[name="email"]', 't@t.com', {replace: true})
+    .click(submitButton)
+  // check title, table rows, and updated job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(tableRows.count).eql(4) // why 4?
+    .expect(firstJob.exists).notOk()
+    .expect(Selector('tbody &gt; tr').withText('testing an update').exists).ok();
+});
+</code></pre>
+
+<p>Test:</p>
+
+<pre><code class="sh">Node Jobs
+✓ All Jobs
+✓ New Job
+✓ Update Job
+
+
+3 passed (8s)
+</code></pre>
+
+<p>What else should you test for? Write the test cases on your own.</p>
+
+<p>Also, did you notice the code smell? There&rsquo;s a lot of code duplication happening between those last two test cases. How could this be better handled?</p>
+
+<p>Finally, did you notice that there are still four jobs in the table? Why? Could there be issues with testing the previous two tests together rather than in isolation? Probably not in this case, but if there are, you could always wrap the update in a new <code>fixture()</code>, since this restores the page to its initial state.</p>
+
+<h3>Delete Job</h3>
+
+<p>Run the app again with <code>npm start</code> to review, from the end user&rsquo;s perspective, what happens when you try to delete a job.</p>
+
+<pre><code class="javascript">test('Delete Job', async (t) =&gt; {
+  // click delete button
+  await t
+    .setNativeDialogHandler(() =&gt; true)
+    .click(clayDryerJob.find('a.btn.btn-danger'))
+  // check title, table rows, and updated job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(tableRows.count).eql(3) // why 3?
+    .expect(clayDryerJob.exists).notOk();
+});
+</code></pre>
+
+<p>Did you notice the <code>setNativeDialogHandler()</code> function? <a href="https://devexpress.github.io/testcafe/documentation/test-api/handling-native-dialogs.html#dialog-handler">This</a> tells TestCafe how to handle the alert.</p>
+
+<p>What if we click &ldquo;cancel&rdquo; instead of &ldquo;ok&rdquo;?</p>
+
+<pre><code class="javascript">test('Delete Job', async (t) =&gt; {
+  // click delete button
+  await t
+    .setNativeDialogHandler(() =&gt; true) // =&gt; press ok
+    .click(clayDryerJob.find('a.btn.btn-danger'))
+  // check title, table rows, and updated job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(tableRows.count).eql(3) // why 3?
+    .expect(clayDryerJob.exists).notOk();
+    // click delete button
+  await t
+    .setNativeDialogHandler(() =&gt; false) // =&gt; press cancel
+    .click(tableRows.find('a.btn.btn-danger'))
+  // check title, table rows, and updated job exists
+  await t
+    .expect(title.innerText).eql('All Jobs')
+    .expect(tableRows.count).eql(3) // why 3?
+});
+</code></pre>
+
+<p>Run the tests:</p>
+
+<pre><code class="sh">Node Jobs
+✓ All Jobs
+✓ New Job
+✓ Update Job
+✓ Delete Job
+
+
+4 passed (9s)
+</code></pre>
+
+<p>Again, handle any edge cases on you own and clean up the code smell.</p>
+
+<h2>Browser Support</h2>
+
+<p>Aside for Chrome, TestCafe <a href="https://devexpress.github.io/testcafe/documentation/using-testcafe/common-concepts/browser-support.html#officially-supported-browsers">supports</a> a number of browsers out-of-the-box. Further, if you don&rsquo;t need to test browser-dependent functionality, then you can use a headless browser.</p>
+
+<p>Start by installing the <a href="https://github.com/ryx/testcafe-browser-provider-nightmare">plugin</a>, which is powered by <a href="https://github.com/segmentio/nightmare">Nightmare</a>:</p>
+
+<pre><code class="sh">$ npm install testcafe-browser-provider-nightmare@0.0.4 --save-dev
+</code></pre>
+
+<p>Update the <code>test</code> command in <em>package.json</em>:</p>
+
+<pre><code class="json">"test": "node_modules/testcafe/bin/testcafe.js nightmare tests/jobs.js --app 'npm start'"
+</code></pre>
+
+<p>Run the tests, and you should see:</p>
+
+<pre><code class="sh">Running tests in:
+- Electron 1.6.2 / Mac OS X 10.11.6
+
+Node Jobs
+✓ All Jobs
+✓ New Job
+✓ Update Job
+✓ Delete Job
+
+
+4 passed (9s)
+</code></pre>
+
+<p>There&rsquo;s also a <a href="https://github.com/DevExpress/testcafe-browser-provider-saucelabs">plugin</a> for cross browser support powered by <a href="https://saucelabs.com/">SauceLabs</a>.</p>
+
+<h2>Continuous Integration</h2>
+
+<p>Finally, let&rsquo;s incorporate TestCafe into our Continuous Integration (CI) process with <a href="https://travis-ci.org/">Travis CI</a>.</p>
+
+<blockquote><p><strong>NOTE:</strong> New to Travis? Review the <a href="https://docs.travis-ci.com/user/for-beginners">Travis CI for Complete Beginners</a> guide along with <a href="http://devexpress.github.io/testcafe/documentation/recipes/running-tests-in-firefox-and-chrome-using-travis-ci.html">Running Tests in Firefox and Chrome Using Travis CI</a>.</p></blockquote>
+
+<p>After you enable Travis CI for the repository you are working with, add a <em>.travis.yml</em> file to the project root:</p>
+
+<pre><code>language: node_js
+node_js: "7"
+
+dist: trusty
+sudo: required
+
+addons:
+  apt:
+    sources:
+     - google-chrome
+    packages:
+     - google-chrome-stable
+
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3
+</code></pre>
+
+<p>Here, we added the Node version along with some basic Chrome settings. Also, we have to use <a href="https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI">xvfb</a> to fake a GUI so that Chrome thinks it&rsquo;s running in a graphical environment.</p>
+
+<hr><br>
+
+
+<p>That&rsquo;s it. Grab the final code from the <a href="https://github.com/mjhea0/testcafe-example">testcafe-example</a> repo. Comment below if you have questions.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a RESTful API With Node, Flow, and Jest]]></title>
@@ -3554,1274 +4005,6 @@ it('should throw an error if the password is &lt; 6 characters', (done) =&gt; {
 <p><br></p>
 
 <p>Grab the code from the <a href="https://github.com/mjhea0/passport-local-knex">repo</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Testing Node and Express]]></title>
-    <link href="http://mherman.org/blog/2016/09/12/testing-node-and-express/"/>
-    <updated>2016-09-12T07:09:13-06:00</updated>
-    <id>http://mherman.org/blog/2016/09/12/testing-node-and-express</id>
-    <content type="html"><![CDATA[<p>This tutorial looks at how to test an <a href="https://expressjs.com/">Express</a> CRUD app with <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a>. Although we&rsquo;ll be writing both <a href="http://stackoverflow.com/questions/5357601/whats-the-difference-between-unit-tests-and-integration-tests">unit and integration tests</a>, the focus will be on the latter so that the tests run against the database in order to test the full functionality of our app. Postgres will be used, but feel free to use your favorite relational database.</p>
-
-<p>Let&rsquo;s get to it!</p>
-
-<h2>Contents</h2>
-
-<ol>
-<li>Objectives</li>
-<li>Why Test?</li>
-<li>Project Setup</li>
-<li>Database Setup</li>
-<li>Test Structure</li>
-<li>Schema Migrations</li>
-<li>Database Seed</li>
-<li>Integration Tests</li>
-<li>Unit Tests</li>
-<li>Test Fixtures</li>
-<li>Validation</li>
-<li>Refactor</li>
-<li>Conclusion</li>
-</ol>
-
-
-<h2>Objectives</h2>
-
-<p>By the end of this tutorial, you will be able to&hellip;</p>
-
-<ol>
-<li>Discuss the benefits of automating tests</li>
-<li>Set up a project with knex.js</li>
-<li>Write schema migration files with knex to create new database tables</li>
-<li>Generate <a href="https://en.wikipedia.org/wiki/Database_seeding">database seed</a> files with knex and apply the seeds to the database</li>
-<li>Perform the basic CRUD functions on a RESTful resource with knex methods</li>
-<li>Set up the testing structure with Mocha and Chai</li>
-<li>Write integration tests</li>
-<li>Write unit tests</li>
-<li>Write tests, and then write just enough code to pass the tests</li>
-<li>Create <a href="https://expressjs.com/en/guide/routing.html">Express routes</a></li>
-<li>Practice test driven development</li>
-<li>Create a CRUD app, following RESTful best practices</li>
-<li>Generate fake test data (<a href="https://en.wikipedia.org/wiki/Test_fixture">test fixtures</a>) with <a href="https://github.com/marak/Faker.js/">faker.js</a></li>
-<li>Validate request parameters with <a href="https://github.com/ctavan/express-validator">express-validator</a></li>
-</ol>
-
-
-<h2>Why Test?</h2>
-
-<p>Are you currently manually testing your app?</p>
-
-<p>When you push new code do you manually test all features in your app to ensure the new code doesn&rsquo;t break existing functionality? How about when you&rsquo;re fixing a bug? Do you manually test your app? How many times - ten, twenty, thirty times?</p>
-
-<p>Stop wasting time!</p>
-
-<p>If you do any sort of manual testing write an automated test instead. Your future self will thank you.</p>
-
-<p>Need more convincing? Testing&hellip;</p>
-
-<ol>
-<li>Helps break down problems into manageable pieces</li>
-<li>Forces you to write cleaner code</li>
-<li>Prevents over coding</li>
-<li>Let&rsquo;s you sleep at night (because you <em>actually</em> know that your code works)</li>
-</ol>
-
-
-<h2>Project Setup</h2>
-
-<p>To quickly create an app boilerplate install the following <a href="https://www.npmjs.com/package/generator-galvanize-express">generator</a>:</p>
-
-<pre><code class="sh">$ npm install -g generator-galvanize-express@1.0.5
-</code></pre>
-
-<p>Make sure you have <a href="http://mochajs.org/">Mocha</a>, <a href="http://chaijs.com/">Chai</a>, <a href="http://gulpjs.com/">Gulp</a>, and <a href="http://yeoman.io/">Yeoman</a> installed globally as well:</p>
-
-<pre><code class="sh">$ npm install -g mocha@3.0.2 chai@3.5.0 yo@1.8.5 gulp@3.9.1
-</code></pre>
-
-<p>Create a new project directory, and then run the generator to scaffold a new app:</p>
-
-<pre><code class="sh">$ yo galvanize-express
-</code></pre>
-
-<blockquote><p><strong>NOTE:</strong> Add your name for the MIT License and opt not to add Gulp Notify.</p></blockquote>
-
-<p>Open the project in your favorite text editor, and then review the project structure as the dependencies are installed:</p>
-
-<pre><code class="sh">$ npm install
-</code></pre>
-
-<p>Finally, let&rsquo;s run the app to make sure all is well:</p>
-
-<pre><code class="sh">$ gulp
-</code></pre>
-
-<p>Navigate to <a href="http://localhost:3000/">http://localhost:3000/</a> in your favorite browser. You should see:</p>
-
-<pre><code>Welcome to Express!
-The sum is 3
-</code></pre>
-
-<h2>Database Setup</h2>
-
-<p>Make sure the Postgres database server is running, and then create two new databases in <a href="http://postgresguide.com/utilities/psql.html">psql</a>, for development and testing:</p>
-
-<pre><code class="sh"># create database express_tdd;
-CREATE DATABASE
-# create database express_tdd_testing;
-CREATE DATABASE
-#
-</code></pre>
-
-<p>Install Knex and <a href="https://github.com/brianc/node-postgres">pg</a>:</p>
-
-<pre><code class="sh">$ npm install knex@0.11.10 pg@6.1.0 --save-dev
-</code></pre>
-
-<p>Run <code>knex init</code> to generate a new <em><a href="http://knexjs.org/#knexfile">knexfile.js</a></em> file in the project root, which is used to store database config. Update the file like so:</p>
-
-<pre><code class="javascript">module.exports = {
-  development: {
-    client: 'postgresql',
-    connection: 'postgres://localhost:5432/express_tdd',
-    migrations: {
-      directory: __dirname + '/src/server/db/migrations'
-    },
-    seeds: {
-      directory: __dirname + '/src/server/db/seeds'
-    }
-  },
-  test: {
-    client: 'postgresql',
-    connection: 'postgres://localhost:5432/express_tdd_testing',
-    migrations: {
-      directory: __dirname + '/src/server/db/migrations'
-    },
-    seeds: {
-      directory: __dirname + '/src/server/db/seeds'
-    }
-  }
-};
-</code></pre>
-
-<p>Here, different database configuration is used based on the app&rsquo;s environment, either <code>development</code> or <code>test</code>. The <a href="https://en.wikipedia.org/wiki/Environment_variable">environment variable</a> <code>NODE_ENV</code> is used to change the environment. <code>NODE_ENV</code> defaults to <code>development</code>, so when we run our tests, we&rsquo;ll need to update the variable to <code>test</code> in order to pull in the proper config.</p>
-
-<p>Next, let&rsquo;s init the database connection. Create a new folder within &ldquo;server&rdquo; called &ldquo;db&rdquo; and then add a file called <em>knex.js</em>:</p>
-
-<pre><code class="javascript">const environment = process.env.NODE_ENV;
-const config = require('../../../knexfile.js')[environment];
-module.exports = require('knex')(config);
-</code></pre>
-
-<p>The database connection is established by passing the proper environment (via the environment variable <code>NODE_ENV</code>) to <em>knexfile.js</em> which returns the associated object that is passed to the <code>knex</code> library in the third line above.</p>
-
-<blockquote><p><strong>NOTE</strong>: Now is a great time to init a new git repo and make your first commit!</p></blockquote>
-
-<h2>Test Structure</h2>
-
-<p>With that complete, let&rsquo;s look at the current test structure. In the project root, you&rsquo;ll notice a &ldquo;test&rdquo; directory, which as you probably guessed contains the test specs. Two sample tests have been created, plus there is some basic configuration set up for <a href="https://github.com/jshint/jshint">JSHint</a> and <a href="http://jscs.info/">JSCS</a> so that the code is linted against the style config and conventions defined in the <em>.jscsrc</em>  and <em>jshintrc</em> files, respectively.</p>
-
-<p>Run the tests:</p>
-
-<pre><code class="sh">$ npm test
-</code></pre>
-
-<p>They all should pass:</p>
-
-<pre><code class="sh">jscs
-  ✓ should pass for working directory (357ms)
-
-routes : index
-  GET /
-    ✓ should render the index (88ms)
-  GET /404
-    ✓ should throw an error
-
-jshint
-  ✓ should pass for working directory (247ms)
-
-controllers : index
-  sum()
-    ✓ should return a total
-    ✓ should return an error
-
-
-6 passing (724ms)
-</code></pre>
-
-<p>Glance at the sample tests. Notice how we updated the environment variable at the top of each test:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-</code></pre>
-
-<p>Remember what this does? Scroll back up to the previous section if you forgot. Now, when we run the tests, knex is initialized with the <code>test</code> config.</p>
-
-<h2>Schema Migrations</h2>
-
-<p>To keep the code simple, let&rsquo;s use one CRUD resource - <code>users</code>:</p>
-
-<table>
-<thead>
-<tr>
-<th> Endpoint  </th>
-<th> HTTP Method  </th>
-<th> CRUD Method </th>
-<th> Result               </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> users     </td>
-<td> GET          </td>
-<td> CREATE      </td>
-<td> get all users        </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> GET          </td>
-<td> CREATE      </td>
-<td> get a single user    </td>
-</tr>
-<tr>
-<td> users     </td>
-<td> POST         </td>
-<td> READ        </td>
-<td> add a single user    </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> PUT          </td>
-<td> UPDATE      </td>
-<td> update a single user </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> DELETE       </td>
-<td> DELETE      </td>
-<td> delete a single user </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>Init a new knex migration:</p>
-
-<pre><code class="sh">$ knex migrate:make users
-</code></pre>
-
-<p>This command created a new migration file in the &ldquo;src/server/db/migrations&rdquo; folder. Now we can create the table along with the individual fields:</p>
-
-<table>
-<thead>
-<tr>
-<th> Field Name  </th>
-<th> Data Type </th>
-<th> Constraints                                 </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> id          </td>
-<td> integer   </td>
-<td> not null, unique                            </td>
-</tr>
-<tr>
-<td> username    </td>
-<td> string    </td>
-<td> not null, unique                            </td>
-</tr>
-<tr>
-<td> email       </td>
-<td> string    </td>
-<td> not null, unique                            </td>
-</tr>
-<tr>
-<td> created_at  </td>
-<td> timestamp </td>
-<td> Not null, default to current date and time  </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>Add the following code to the migration file:</p>
-
-<pre><code class="javascript">exports.up = (knex, Promise) =&gt; {
-  return knex.schema.createTable('users', (table) =&gt; {
-    table.increments();
-    table.string('username').unique().notNullable();
-    table.string('email').unique().notNullable();
-    table.timestamp('created_at').defaultTo(knex.fn.now());
-  });
-};
-
-exports.down = (knex, Promise) =&gt; {
-  return knex.schema.dropTable('users');
-};
-</code></pre>
-
-<p>Apply the migration:</p>
-
-<pre><code class="sh">$ knex migrate:latest --env development
-</code></pre>
-
-<p>Make sure the schema was applied within psql:</p>
-
-<pre><code class="sh"># \c express_tdd
-You are now connected to database "express_tdd".
-# \dt
-                   List of relations
- Schema |         Name         | Type  |     Owner
---------+----------------------+-------+---------------
- public | knex_migrations      | table | michaelherman
- public | knex_migrations_lock | table | michaelherman
- public | users                | table | michaelherman
-(3 rows)
-
-# select * from users;
- id | username | email | created_at
-----+----------+-------+------------
-(0 rows)
-</code></pre>
-
-<h2>Database Seed</h2>
-
-<p>We need to <a href="https://en.wikipedia.org/wiki/Database_seeding">seed</a> the database to add dummy data to the database so we have something to work with. Init a new seed, which will add a new seed file to &ldquo;src/server/db/seeds/&rdquo;:</p>
-
-<pre><code class="sh">$ knex seed:make users
-</code></pre>
-
-<p>Update the file:</p>
-
-<pre><code class="sh">exports.seed = (knex, Promise) =&gt; {
-  // Deletes ALL existing entries
-  return knex('users').del()
-  .then(() =&gt; {
-    return Promise.all([
-      // Inserts seed entries
-      knex('users').insert({
-        username: 'michael',
-        email: 'michael@mherman.org'
-      }),
-      knex('users').insert({
-        username: 'michaeltwo',
-        email: 'michael@realpython.org'
-      })
-    ]);
-  });
-};
-</code></pre>
-
-<p>Run the seed:</p>
-
-<pre><code class="sh">$ knex seed:run --env development
-</code></pre>
-
-<p>Then make sure the data is in the database:</p>
-
-<pre><code class="sh"># select * from users;
- id |  username  |         email          |          created_at
-----+------------+------------------------+-------------------------------
-  1 | michael    | michael@mherman.org    | 2016-09-08 15:08:00.31772-06
-  2 | michaeltwo | michael@realpython.org | 2016-09-08 15:08:00.320299-06
-(2 rows)
-</code></pre>
-
-<p>Set up complete.</p>
-
-<h2>Integration Tests</h2>
-
-<p>We&rsquo;ll be taking a test first approach to development, roughly following these steps for each endpoint:</p>
-
-<ol>
-<li>Write test</li>
-<li>Run the test (it should fail)</li>
-<li>Write code</li>
-<li>Run the test (it should pass)</li>
-</ol>
-
-
-<p>Start by thinking about the expected input (JSON payload) and output (JSON object) for each RESTful endpoint:</p>
-
-<table>
-<thead>
-<tr>
-<th> Endpoint  </th>
-<th> HTTP   </th>
-<th> Input       </th>
-<th> Output           </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> users     </td>
-<td> GET    </td>
-<td> none        </td>
-<td> array of objects </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> GET    </td>
-<td> none        </td>
-<td> single object    </td>
-</tr>
-<tr>
-<td> users     </td>
-<td> POST   </td>
-<td> user object </td>
-<td> single object    </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> PUT    </td>
-<td> user object </td>
-<td> single object    </td>
-</tr>
-<tr>
-<td> users/:id </td>
-<td> DELETE </td>
-<td> none        </td>
-<td> single object    </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>The input user object will always look something like:</p>
-
-<pre><code class="json">{
-  "username": "michael",
-  "email": "michael@herman.com"
-}
-</code></pre>
-
-<p>Likewise, the output will always have the following structure:</p>
-
-<pre><code class="json">{
-  "status": "success",
-  "data": "either an array of objects or a single object"
-}
-</code></pre>
-
-<p>Create a new file in the &ldquo;test/integration&rdquo; directory called &ldquo;routes.users.test.js&rdquo; and add the following code:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-const chaiHttp = require('chai-http');
-chai.use(chaiHttp);
-
-const server = require('../../src/server/app');
-const knex = require('../../src/server/db/knex');
-
-describe('routes : users', () =&gt; {
-
-  beforeEach((done) =&gt; {
-    knex.migrate.rollback()
-    .then(() =&gt; {
-      knex.migrate.latest()
-      .then(() =&gt; {
-        knex.seed.run()
-        .then(() =&gt; {
-          done();
-        })
-      });
-    });
-  });
-
-  afterEach((done) =&gt; {
-    knex.migrate.rollback()
-    .then(() =&gt; {
-      done();
-    });
-  });
-
-});
-</code></pre>
-
-<p>What&rsquo;s happening here? Think about it on your own. Turn to Google if necessary. Still have questions? Comment below.</p>
-
-<p>With that, let&rsquo;s start writing some code&hellip;</p>
-
-<h3>GET ALL Users</h3>
-
-<p>Add the first test:</p>
-
-<pre><code class="javascript">describe('GET /api/v1/users', () =&gt; {
-  it('should respond with all users', (done) =&gt; {
-    chai.request(server)
-    .get('/api/v1/users')
-    .end((err, res) =&gt; {
-      // there should be no errors
-      should.not.exist(err);
-      // there should be a 200 status code
-      res.status.should.equal(200);
-      // the response should be JSON
-      res.type.should.equal('application/json');
-      // the JSON response body should have a
-      // key-value pair of {"status": "success"}
-      res.body.status.should.eql('success');
-      // the JSON response body should have a
-      // key-value pair of {"data": [2 user objects]}
-      res.body.data.length.should.eql(2);
-      // the first object in the data array should
-      // have the right keys
-      res.body.data[0].should.include.keys(
-        'id', 'username', 'email', 'created_at'
-      );
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Take note of the inline code comments. Need more explanation? Read over <a href="http://mherman.org/blog/2015/09/10/testing-node-js-with-mocha-and-chai/#.V9W8aJMrJE4">Testing Node.js With Mocha and Chai</a>. Run the test to make sure it fails. Now write the code to get the test pass, following these steps:</p>
-
-<h4>Update the route config (src/server/config/route-config.js)</h4>
-
-<pre><code class="javascript">(function (routeConfig) {
-
-  'use strict';
-
-  routeConfig.init = function (app) {
-
-    // *** routes *** //
-    const routes = require('../routes/index');
-    const userRoutes = require('../routes/users');
-
-    // *** register routes *** //
-    app.use('/', routes);
-    app.use('/api/v1/users', userRoutes);
-
-  };
-
-})(module.exports);
-</code></pre>
-
-<p>Now we have a new set of routes set up that we can use within <em>src/server/routes/users.js</em>, which we need to add&hellip;</p>
-
-<h4>Set up new routes</h4>
-
-<p>Create the <em>users.js</em> file in &ldquo;src/server/routes/&rdquo;, and then add in the route boilerplate:</p>
-
-<pre><code class="javascript">const express = require('express');
-const router = express.Router();
-
-const knex = require('../db/knex');
-
-module.exports = router;
-</code></pre>
-
-<p>Now we can add in the route handler with the knex methods for retrieving all users from the <code>users</code> table:</p>
-
-<pre><code class="javascript">router.get('/', (req, res, next) =&gt; {
-  knex('users').select('*')
-  .then((users) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      data: users
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error',
-      data: err
-    });
-  });
-});
-</code></pre>
-
-<p>Run the tests:</p>
-
-<pre><code class="sh">$ npm test
-</code></pre>
-
-<p>You should see the test passing:</p>
-
-<pre><code class="sh">routes : users
-  GET /api/v1/users
-    ✓ should respond with all users
-</code></pre>
-
-<h3>GET Single User</h3>
-
-<p>Moving on, we can just copy and paste the previous test and use that boilerplate to write the next test:</p>
-
-<pre><code class="javascript">describe('GET /api/v1/users/:id', () =&gt; {
-  it('should respond with a single user', (done) =&gt; {
-    chai.request(server)
-    .get('/api/v1/users/1')
-    .end((err, res) =&gt; {
-      // there should be no errors
-      should.not.exist(err);
-      // there should be a 200 status code
-      res.status.should.equal(200);
-      // the response should be JSON
-      res.type.should.equal('application/json');
-      // the JSON response body should have a
-      // key-value pair of {"status": "success"}
-      res.body.status.should.eql('success');
-      // the JSON response body should have a
-      // key-value pair of {"data": 1 user object}
-      res.body.data[0].should.include.keys(
-        'id', 'username', 'email', 'created_at'
-      );
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Run the test. Watch it fail. Write the code to get it to pass:</p>
-
-<pre><code class="javascript">router.get('/:id', (req, res, next) =&gt; {
-  const userID = parseInt(req.params.id);
-  knex('users')
-  .select('*')
-  .where({
-    id: userID
-  })
-  .then((users) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      data: users
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error',
-      data: err
-    });
-  });
-});
-</code></pre>
-
-<h3>POST</h3>
-
-<p>Test:</p>
-
-<pre><code class="javascript">describe('POST /api/v1/users', () =&gt; {
-  it('should respond with a success message along with a single user that was added', (done) =&gt; {
-    chai.request(server)
-    .post('/api/v1/users')
-    .send({
-      username: 'ryan',
-      email: 'ryan@ryan.com'
-    })
-    .end((err, res) =&gt; {
-      // there should be no errors
-      should.not.exist(err);
-      // there should be a 201 status code
-      // (indicating that something was "created")
-      res.status.should.equal(201);
-      // the response should be JSON
-      res.type.should.equal('application/json');
-      // the JSON response body should have a
-      // key-value pair of {"status": "success"}
-      res.body.status.should.eql('success');
-      // the JSON response body should have a
-      // key-value pair of {"data": 1 user object}
-      res.body.data[0].should.include.keys(
-        'id', 'username', 'email', 'created_at'
-      );
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Code:</p>
-
-<pre><code class="javascript">router.post('/', (req, res, next) =&gt; {
-  const newUsername = req.body.username;
-  const newEmail = req.body.email;
-  knex('users')
-  .insert({
-    username: newUsername,
-    email: newEmail
-  })
-  .returning('*')
-  .then((user) =&gt; {
-    res.status(201).json({
-      status: 'success',
-      data: user
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error',
-      data: err
-    });
-  });
-});
-</code></pre>
-
-<h3>PUT</h3>
-
-<p>Test:</p>
-
-<pre><code class="javascript">describe('PUT /api/v1/users', () =&gt; {
-  it('should respond with a success message along with a single user that was updated', (done) =&gt; {
-    knex('users')
-    .select('*')
-    .then((user) =&gt; {
-      const userObject = user[0];
-      chai.request(server)
-      .put(`/api/v1/users/${userObject.id}`)
-      .send({
-        username: 'updatedUser',
-        email: 'updated@user.com'
-      })
-      .end((err, res) =&gt; {
-        // there should be no errors
-        should.not.exist(err);
-        // there should be a 200 status code
-        res.status.should.equal(200);
-        // the response should be JSON
-        res.type.should.equal('application/json');
-        // the JSON response body should have a
-        // key-value pair of {"status": "success"}
-        res.body.status.should.eql('success');
-        // the JSON response body should have a
-        // key-value pair of {"data": 1 user object}
-        res.body.data[0].should.include.keys(
-          'id', 'username', 'email', 'created_at'
-        );
-        // ensure the user was in fact updated
-        var newUserObject = res.body.data[0];
-        newUserObject.username.should.not.eql(userObject.username);
-        newUserObject.email.should.not.eql(userObject.email);
-        // redundant
-        newUserObject.username.should.eql('updatedUser');
-        newUserObject.email.should.eql('updated@user.com');
-        done();
-      });
-    });
-  });
-});
-</code></pre>
-
-<p>Code:</p>
-
-<pre><code class="javascript">router.put('/:id', (req, res, next) =&gt; {
-  const userID = parseInt(req.params.id);
-  const updatedUsername = req.body.username;
-  const updatedEmail = req.body.email;
-  knex('users')
-  .update({
-    username: updatedUsername,
-    email: updatedEmail
-  })
-  .where({
-    id: userID
-  })
-  .returning('*')
-  .then((user) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      data: user
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error',
-      data: err
-    });
-  });
-});
-</code></pre>
-
-<h3>DELETE</h3>
-
-<p>Test:</p>
-
-<pre><code class="javascript">describe('DELETE /api/v1/users/:id', () =&gt; {
-  it('should respond with a success message along with a single user that was deleted', (done) =&gt; {
-    knex('users')
-    .select('*')
-    .then((users) =&gt; {
-      const userObject = users[0];
-      const lengthBeforeDelete = users.length;
-      chai.request(server)
-      .delete(`/api/v1/users/${userObject.id}`)
-      .end((err, res) =&gt; {
-        // there should be no errors
-        should.not.exist(err);
-        // there should be a 200 status code
-        res.status.should.equal(200);
-        // the response should be JSON
-        res.type.should.equal('application/json');
-        // the JSON response body should have a
-        // key-value pair of {"status": "success"}
-        res.body.status.should.eql('success');
-        // the JSON response body should have a
-        // key-value pair of {"data": 1 user object}
-        res.body.data[0].should.include.keys(
-          'id', 'username', 'email', 'created_at'
-        );
-        // ensure the user was in fact deleted
-        knex('users').select('*')
-        .then((updatedUsers) =&gt; {
-          updatedUsers.length.should.eql(lengthBeforeDelete - 1);
-          done();
-        });
-      });
-    });
-  });
-});
-</code></pre>
-
-<p>Code:</p>
-
-<pre><code class="javascript">router.delete('/:id', (req, res, next) =&gt; {
-  const userID = parseInt(req.params.id);
-  knex('users')
-  .del()
-  .where({
-    id: userID
-  })
-  .returning('*')
-  .then((user) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      data: user
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error',
-      data: err
-    });
-  });
-});
-</code></pre>
-
-<p>Run all your tests. All should pass.</p>
-
-<h2>Unit Tests</h2>
-
-<p>New business requirement!</p>
-
-<p>We need a route to return all users created after a certain date. Since we already know how to write routes, let&rsquo;s add a helper function that takes an array of users and a year that then returns an array of users created on or after the specified date. We can then use this function in a future route handler.</p>
-
-<p>Steps:</p>
-
-<ol>
-<li>Write a unit test</li>
-<li>Run the tests (the unit test should fail)</li>
-<li>Write the code to pass the test</li>
-<li>Run the tests (all should pass!)</li>
-</ol>
-
-
-<h3>Write a unit test</h3>
-
-<p>Create a new file called <em>controllers.users.test.js</em> within the &ldquo;test/unit/&rdquo; directory:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-
-const usersController = require('../../src/server/controllers/users');
-
-describe('controllers : users', () =&gt; {
-
-  describe('filterByYear()', () =&gt; {
-    // add code here
-  });
-
-});
-</code></pre>
-
-<p>Now add the body of the test:</p>
-
-<pre><code class="javascript">const userArray = [
-  {
-    id: 1,
-    username: 'michael',
-    email: 'michael@mherman.org',
-    created_at: '2016-09-10T16:44:28.015Z'
-  },
-  {
-    id: 2,
-    username: 'mike',
-    email: 'mike@mherman.org',
-    created_at: '2015-09-10T16:44:28.015Z'
-  },
-  {
-    id: 3,
-    username: 'mike',
-    email: 'mike@mherman.org',
-    created_at: '2014-09-10T16:44:28.015Z'
-  }
-];
-it('should return all users created on or after (&gt;=) specified year',
-(done) =&gt; {
-  usersController.filterByYear(userArray, 2015, (err, total) =&gt; {
-    should.not.exist(err);
-    total.length.should.eql(2);
-    done();
-  });
-});
-</code></pre>
-
-<h4>What&rsquo;s happening?</h4>
-
-<p>Within the <code>it</code> block we passed in the <code>userArray</code>, a year, and a callback function to a function called <code>filterByYear()</code>. This then asserts that a error does not exist and that the length of the response (<code>total</code>) is 2.</p>
-
-<p>Run the tests. Watch them fail. Add the code&hellip;</p>
-
-<h3>Write the code to pass the unit test</h3>
-
-<p>Create a new controller within &ldquo;src/server/controllers&rdquo; called <em>users.js</em>:</p>
-
-<pre><code class="javascript">function filterByYear(arrayOfUsers, year, callback) {
-  const response = arrayOfUsers.filter((user) =&gt; {
-    const date = new Date(user.created_at);
-    return date.getFullYear() &gt;= year;
-  });
-  callback(null, response);
-}
-
-module.exports = {
-  filterByYear
-};
-</code></pre>
-
-<p>Confused? Add an inline comment above each line, describing <em>what</em> the code does and, in some cases, <em>why</em> the code does what it does.</p>
-
-<p>Run the tests. Do they pass? They should.</p>
-
-<p>Now you can use that function in a new route to finish the business requirement. Do this on your own. Be sure to write the integration test first!</p>
-
-<h2>Test Fixtures</h2>
-
-<p><a href="https://github.com/marak/Faker.js/">faker.js</a> is a powerful library for generating fake data. In our case, we can use faker to generate test data
-for our unit tests. Such data is often called a <a href="https://en.wikipedia.org/wiki/Test_fixture">test fixture</a>.</p>
-
-<p>Install faker:</p>
-
-<pre><code class="sh">npm install faker@3.1.0 --save-dev
-</code></pre>
-
-<h3>Code</h3>
-
-<p>Since we don&rsquo;t really (or maybe <em>really</em> don&rsquo;t?) know what the test is going to look like, let&rsquo;s start with writing a quick script to generate test data. Create a new file within the &ldquo;test&rdquo; directory called <em>generate.test.data.js</em>, and then add the following code to it:</p>
-
-<pre><code class="javascript">const faker = require('faker');
-
-function createUserObject(
-  yearOne, yearTwo, amountToCreate, callback) {
-  const userArray = [];
-  for (var i = 1; i &lt;= amountToCreate; i++) {
-    userArray.push({
-      id: faker.random.uuid(),
-      username: faker.internet.userName(),
-      email: faker.internet.email(),
-      created_at: faker.date.between(yearOne, yearTwo)
-    });
-  }
-  callback(null, userArray);
-}
-</code></pre>
-
-<p>This function generates an array of user objects, each object is generated randomly using faker.js <a href="https://github.com/marak/Faker.js/#api">methods</a>. We could use that data directly in the test, but let&rsquo;s first save the data to a fixture file for easy use. Update the file like so:</p>
-
-<pre><code class="javascript">const faker = require('faker');
-const fs = require('fs');
-const path = require('path');
-
-function createUserObject(
-  yearOne, yearTwo, amountToCreate, callback) {
-  const userArray = [];
-  for (var i = 1; i &lt;= amountToCreate; i++) {
-    userArray.push({
-      id: faker.random.uuid(),
-      username: faker.internet.userName(),
-      email: faker.internet.email(),
-      created_at: faker.date.between(yearOne, yearTwo)
-    });
-  }
-  callback(null, userArray);
-}
-
-createUserObject(2010, 2014, 10, (err, beforeDates) =&gt; {
-  if (!err) {
-    createUserObject(2015, 2016, 5, (err, onOrAfterDates) =&gt; {
-      const userArray = beforeDates.concat(onOrAfterDates);
-      fs.writeFile(
-        path.join(__dirname, 'test.data.json'),
-        JSON.stringify(userArray, null, 2),
-        (err) =&gt; {
-        if (!err) {
-          return true;
-        }
-      });
-    });
-  }
-  return false;
-});
-</code></pre>
-
-<p>Now we can generate two arrays -</p>
-
-<ol>
-<li>One with data <em>before</em> a specific date</li>
-<li>The other with data <em>on or after</em> that specific date</li>
-</ol>
-
-
-<p>Before saving to a file, we concatenated the two arrays into one. You&rsquo;ll see why this was necessary when the test is created. For now, run the script from the project root:</p>
-
-<pre><code class="sh">$ node test/generate.test.data.js
-</code></pre>
-
-<p>You should see a new fixture file called <em>test.data.json</em> in the &ldquo;test&rdquo; folder. The data in this file can now be used in a test.</p>
-
-<h3>Test</h3>
-
-<p>Add the following test to <em>controllers.users.test.js</em>:</p>
-
-<pre><code class="javascript">describe('filterByYear() with helper', () =&gt; {
-  it('should return all users created on or after (&gt;=) specified year',
-  (done) =&gt; {
-    const testDataFile = path.join(
-      __dirname, '..', 'test.data.json');
-    fs.readFile(testDataFile, 'utf8', (err, data) =&gt; {
-      usersController.filterByYear(
-        JSON.parse(data), 2015, (err, total) =&gt; {
-        should.not.exist(err);
-        total.length.should.eql(5);
-        done();
-      });
-    });
-  });
-});
-</code></pre>
-
-<p>Make sure to require in <code>fs</code> and <code>path</code> at the top:</p>
-
-<pre><code class="javascript">const fs = require('fs');
-const path = require('path');
-</code></pre>
-
-<p>Run the tests again!</p>
-
-<h2>Validation</h2>
-
-<p>Thus far we have not tested for possible errors. For example, what happens if the email address provided with a POST request is not properly formatted? Or if an invalid ID is used with a PUT request?</p>
-
-<p>We can start by validating parameters with <a href="https://github.com/ctavan/express-validator">express-validator</a>.</p>
-
-<h3>Install</h3>
-
-<pre><code class="sh">$ npm install express-validator@2.20.8 --save
-</code></pre>
-
-<p>Then <code>require</code> the module at the top of <em>src/server/config/main-config.js</em>:</p>
-
-<pre><code class="javascript">const expressValidator = require('express-validator');
-</code></pre>
-
-<p>Mount the validator to the app middleware just below the body parser:</p>
-
-<pre><code class="javascript">app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(expressValidator());
-</code></pre>
-
-<h3>Test</h3>
-
-<p>Add the first test to the <code>GET /api/v1/users/:id'</code> describe block:</p>
-
-<pre><code class="javascript">it('should throw an error if the user id is null', (done) =&gt; {
-  chai.request(server)
-  .get(`/api/v1/users/${null}`)
-  .end((err, res) =&gt; {
-    res.status.should.equal(400);
-    res.body.message.should.eql('Validation failed');
-    res.body.failures.length.should.eql(1);
-    done();
-  });
-});
-</code></pre>
-
-<p>Add the second test to the <code>POST /api/v1/users</code> describe block:</p>
-
-<pre><code class="javascript">it('should throw an error when a username is not provided', (done) =&gt; {
-  chai.request(server)
-  .post('/api/v1/users')
-  .send({
-    username: null,
-    email: '111111'
-  })
-  .end((err, res) =&gt; {
-    res.status.should.equal(400);
-    res.body.message.should.eql('Validation failed');
-    res.body.failures.length.should.eql(2);
-    // ensure the user was not added
-    knex('users')
-    .select('*')
-    .where({
-      email: '111111'
-    })
-    .then((user) =&gt; {
-      user.length.should.eql(0);
-      done();
-    });
-  });
-});
-</code></pre>
-
-<h3>Code</h3>
-
-<p>To add the proper validation, create a new file called <em>validation.js</em> within the &ldquo;routes&rdquo; directory:</p>
-
-<pre><code class="javascript">function validateUserResources(req, res, next) {
-  if (req.method === 'GET') {
-    req.checkParams('id', 'Must be valid').notEmpty().isInt();
-  } else if (req.method === 'POST') {
-    req.checkBody('username', 'Username cannot be empty').notEmpty();
-    req.checkBody('email', 'Must be a valid email').isEmail();
-  } else if (req.method === 'PUT') {
-    req.checkParams('id', 'Must be valid').notEmpty().isInt();
-    req.checkBody('username', 'Username cannot be empty').notEmpty();
-    req.checkBody('email', 'Must be a valid email').isEmail();
-  } else if (req.method === 'DELETE') {
-    req.checkParams('id', 'Must be valid').notEmpty().isInt();
-  }
-  const errors = req.validationErrors();
-  if (errors) {
-    return res.status(400).json({
-      message: 'Validation failed',
-      failures: errors
-    });
-  } else {
-    return next();
-  }
-}
-
-module.exports = validateUserResources;
-</code></pre>
-
-<p>Here, with express-validator, parameters are validated using either <code>req.checkParams</code> or <code>req.checkBody</code> and then errors are aggregated together with <code>req.validationErrors()</code>.</p>
-
-<p>Require this module in the user routes:</p>
-
-<pre><code class="javascript">const validate = require('./validation');
-</code></pre>
-
-<p>Add the <code>validateUserResources</code> to all the route handlers except the handler to GET ALL users, like so:</p>
-
-<pre><code class="javascript">router.get('/:id',
-  validate.validateUserResources,
-  (req, res, next) =&gt; {
-    ...
-  })
-</code></pre>
-
-<p>Finish the remaining route handlers, and then run the tests. All should pass:</p>
-
-<pre><code class="sh">jscs
-  ✓ should pass for working directory (633ms)
-
-routes : index
-  GET /
-    ✓ should render the index (71ms)
-  GET /404
-    ✓ should throw an error
-
-routes : users
-  GET /api/v1/users
-    ✓ should respond with all users (53ms)
-  GET /api/v1/users/:id
-    ✓ should respond with a single user
-    ✓ should throw an error if the user id is null
-  POST /api/v1/users
-    ✓ should respond with a success message along with a single user that was added (129ms)
-    ✓ should throw an error when a username is not provided
-  PUT /api/v1/users/:id
-    ✓ should respond with a success message along with a single user that was updated
-  DELETE /api/v1/users/:id
-    ✓ should respond with a success message along with a single user that was deleted
-
-jshint
-  ✓ should pass for working directory (661ms)
-
-controllers : index
-  sum()
-    ✓ should return a total
-    ✓ should return an error
-
-controllers : users
-  filterByYear()
-    ✓ should return all users created on or after (&gt;=) specified year
-  filterByYear() with helper
-    ✓ should return all users created on or after (&gt;=) specified year
-
-15 passing (3s)
-</code></pre>
-
-<p>We are still not handling all errors. What else could go wrong? Think about edge cases. Then write tests. Do this on your own.</p>
-
-<h2>Refactor</h2>
-
-<p>Finally, let&rsquo;s make our code a bit more modular by refactoring out unnecessary logic from the route handlers.</p>
-
-<p>Within the &ldquo;db&rdquo; folder, add a file called <em>queries.users.js</em>:</p>
-
-<pre><code class="javascript">const knex = require('./knex');
-
-function getAllUsers(callback) {
-  return knex('users').select('*')
-  .then((users) =&gt; {
-    callback(null, users);
-  })
-  .catch((err) =&gt; {
-    callback(err);
-  });
-}
-
-module.exports = {
-  getAllUsers
-};
-</code></pre>
-
-<p>This function now handles all the knex logic, and it can now be used anywhere in the project. Be sure to update the route handler:</p>
-
-<pre><code class="javascript">router.get('/', (req, res, next) =&gt; {
-  userQueries.getAllUsers((err, users) =&gt; {
-    if (err) {
-      res.status(500).json({
-        status: 'error',
-        data: err
-      });
-    } else {
-      res.status(200).json({
-        status: 'success',
-        data: users
-      });
-    }
-  });
-});
-</code></pre>
-
-<p>Don&rsquo;t forget to add the requirement:</p>
-
-<pre><code class="javascript">const userQueries = require('../db/queries.users');
-</code></pre>
-
-<p>Run the tests again. They all should still pass! Notice how we were able to refactor with confidence (without fear of the code breaking) since we had proper test coverage. Finish refactoring out all of the knex logic to <em>queries.users.js</em>. Test again when done.</p>
-
-<h2>Conclusion</h2>
-
-<p>Turn back to the objectives. Read each aloud to yourself. Can you put each one into action?</p>
-
-<p>The testing process may seem daunting and unnecessary at first, but you will see just how necessary it is as your projects grow and become more complex. Continue to practice by incorporating tests whenever you begin a new project.</p>
-
-<p>The full code can be found in the <a href="https://github.com/mjhea0/express-testing-mocha-knex">express-testing-mocha-knex</a> repository.</p>
 ]]></content>
   </entry>
   

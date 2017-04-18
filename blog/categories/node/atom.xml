@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-03-20T07:00:41-06:00</updated>
+  <updated>2017-04-18T07:24:18-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,698 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Developing and Testing Microservices With Docker]]></title>
+    <link href="http://mherman.org/blog/2017/04/18/developing-and-testing-microservices-with-docker/"/>
+    <updated>2017-04-18T08:16:46-06:00</updated>
+    <id>http://mherman.org/blog/2017/04/18/developing-and-testing-microservices-with-docker</id>
+    <content type="html"><![CDATA[<p>Often, when developing applications with a microservice architecture, you cannot fully test out all services until you deploy to a staging server. This takes much too long to get feedback. Docker helps to speed up this process by making it easier to link together small, independent services locally.</p>
+
+<p><strong>In this article we&rsquo;ll look at how to configure and test a number of services locally with <a href="https://docs.docker.com/">Docker</a> and <a href="https://docs.docker.com/compose/">Docker Compose</a>. We&rsquo;ll also look at workflow and how to interact with and debug containers.</strong></p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/node-docker-api.png" style="max-width: 100%; border:0; box-shadow: none;" alt="microservice architecture">
+</div>
+
+
+<p><br></p>
+
+<p>This post assumes prior knowledge of the following topics. Refer to the resources for more info:</p>
+
+<table>
+<thead>
+<tr>
+<th> Topic            </th>
+<th> Resource </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> Docker           </td>
+<td> <a href="https://docs.docker.com/engine/getstarted/">Get started with Docker</a> </td>
+</tr>
+<tr>
+<td> Docker Compose   </td>
+<td> <a href="https://docs.docker.com/compose/gettingstarted/">Get started with Docker Compose</a> </td>
+</tr>
+<tr>
+<td> Node/Express API </td>
+<td> <a href="http://mherman.org/blog/2016/09/12/testing-node-and-express">Testing Node and Express</a> </td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>Contents</h2>
+
+<ol>
+<li>Objectives</li>
+<li>Project Setup</li>
+<li>Docker Config</li>
+<li>Postgres Setup</li>
+<li>Users Service Setup</li>
+<li>Locations Service Setup</li>
+<li>Web Setup</li>
+<li>Workflow</li>
+<li>Testing</li>
+<li>Test Setup</li>
+<li>Next Steps</li>
+</ol>
+
+
+<h2>Objectives</h2>
+
+<p>By the end of this tutorial, you should be able to&hellip;</p>
+
+<ol>
+<li>Configure and run a set of microservices locally with Docker and Docker Compose</li>
+<li>Utilize <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">volumes</a> to mount your code into a container</li>
+<li>Run unit and integration tests inside a Docker container</li>
+<li>Set up a separate container for functional tests</li>
+<li>Debug a running Docker container</li>
+<li>Utilize <a href="https://docs.docker.com/compose/compose-file/#links">links</a> for inter-container communication (AJAX)</li>
+<li>Secure your services via JWT-based authentication</li>
+</ol>
+
+
+<h2>Project Setup</h2>
+
+<p>Start by cloning the base project and the checking out the first tag:</p>
+
+<pre><code class="sh">$ git clone https://github.com/mjhea0/node-docker-api
+$ cd node-docker-api
+$ git checkout tags/v1
+</code></pre>
+
+<p>Take a quick look at the structure, broken down by service:</p>
+
+<pre><code class="sh">├── services
+│   ├── locations
+│   │   ├── gulpfile.js
+│   │   ├── knexfile.js
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── app.js
+│   │   │   ├── db
+│   │   │   │   ├── connection.js
+│   │   │   │   ├── create.sql
+│   │   │   │   ├── migrations
+│   │   │   │   │   └── 20170405114746_locations.js
+│   │   │   │   ├── queries.js
+│   │   │   │   └── seeds
+│   │   │   │       └── locations.js
+│   │   │   ├── routes
+│   │   │   │   ├── _helpers.js
+│   │   │   │   └── locations.js
+│   │   │   └── server.js
+│   │   └── tests
+│   │       └── integration
+│   │           ├── routes.index.test.js
+│   │           └── routes.locations.test.js
+│   └── users
+│       ├── gulpfile.js
+│       ├── knexfile.js
+│       ├── npm-debug.log
+│       ├── package.json
+│       ├── src
+│       │   ├── app.js
+│       │   ├── auth
+│       │   │   ├── _helpers.js
+│       │   │   └── local.js
+│       │   ├── db
+│       │   │   ├── connection.js
+│       │   │   ├── create.sql
+│       │   │   ├── migrations
+│       │   │   │   └── 20170403223908_users.js
+│       │   │   └── seeds
+│       │   │       └── users.js
+│       │   ├── routes
+│       │   │   └── users.js
+│       │   └── server.js
+│       └── tests
+│           ├── integration
+│           │   ├── routes.index.test.js
+│           │   └── routes.users.test.js
+│           └── unit
+│               ├── auth.helpers.test.js
+│               └── auth.local.test.js
+├── tests
+│   ├── main.test.js
+│   └── package.json
+└── web
+    ├── gulpfile.js
+    ├── package.json
+    └── src
+        ├── app.js
+        ├── public
+        │   ├── main.css
+        │   └── main.js
+        ├── routes
+        │   ├── _helpers.js
+        │   └── index.js
+        ├── server.js
+        └── views
+            ├── _base.html
+            ├── error.html
+            ├── login.html
+            ├── main.html
+            ├── nav.html
+            ├── register.html
+            └── user.html
+</code></pre>
+
+<p>Before we Dockerize the services, feel free to test the locations and/or users services&hellip;</p>
+
+<p>Users:</p>
+
+<ol>
+<li>Navigate to &ldquo;services/users&rdquo;</li>
+<li><code>npm install</code></li>
+<li><code>node src/server.js</code></li>
+<li>Open <a href="http://localhost:3000/users/ping">http://localhost:3000/users/ping</a> in your browser</li>
+</ol>
+
+
+<p>Locations:</p>
+
+<ol>
+<li>Navigate to &ldquo;services/locations&rdquo;</li>
+<li><code>npm install</code></li>
+<li><code>node src/server.js</code></li>
+<li>Open <a href="http://localhost:3001/locations/ping">http://localhost:3001/locations/ping</a> in your browser</li>
+</ol>
+
+
+<p>Kill the servers once done.</p>
+
+<h2>Docker Config</h2>
+
+<p>Add a <em>docker-compose.yml</em> file to the project root, which is a config file used by Docker Compose to link multiple services together:</p>
+
+<pre><code>version: '2.1'
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> Why 2.1? <a href="https://docs.docker.com/compose/compose-file/compose-file-v2/#version-21">Answer</a>.</p></blockquote>
+
+<p>Then add a <em>.dockerignore</em> to the &ldquo;services/locations&rdquo;, &ldquo;"services/locations/src/db&rdquo;, &ldquo;services/users&rdquo;, &ldquo;"services/users/src/db&rdquo;, &ldquo;tests&rdquo;, and &ldquo;web&rdquo; directories:</p>
+
+<pre><code>.git
+.gitignore
+README.md
+docker-compose.yml
+node_modules
+</code></pre>
+
+<p>With that, let&rsquo;s set up each service individually, testing as we go&hellip;</p>
+
+<h2>Postgres Setup</h2>
+
+<p>Add a <em>Dockerfile</em> to &ldquo;services/locations/src/db&rdquo; and &ldquo;services/users/src/db&rdquo;:</p>
+
+<pre><code>FROM postgres
+
+# run create.sql on init
+ADD create.sql /docker-entrypoint-initdb.d
+</code></pre>
+
+<p>Then update <em>docker-compose.yml</em>:</p>
+
+<pre><code>version: '2.1'
+
+services:
+
+  users-db:
+    container_name: users-db
+    build: ./services/users/src/db
+    ports:
+      - '5433:5432'
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    healthcheck:
+      test: exit 0
+
+  locations-db:
+    container_name: locations-db
+    build: ./services/locations/src/db
+    ports:
+      - '5434:5432'
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    healthcheck:
+      test: exit 0
+</code></pre>
+
+<p>Here, we create two new containers called <code>users-db</code> and <code>locations-db</code>, from the <em>Dockerfiles</em> found in &ldquo;services/users/src/db&rdquo; and &ldquo;services/locations/src/db&rdquo;, respectively. We also add environment variables, expose ports, and send an exit code <code>0</code> once they are successfully up and running - which will be used by other services.</p>
+
+<p>To fire up the containers, run:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d
+</code></pre>
+
+<p>Once up, you can get a quick sanity check, by entering the shell:</p>
+
+<pre><code class="sh">$ docker-compose run users-db bash
+# exit
+$ docker-compose run locations-db bash
+# exit
+</code></pre>
+
+<h2>Users Service Setup</h2>
+
+<p>Again, add a <em>Dockerfile</em> to &ldquo;services/users&rdquo;, making sure to review the comments:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /src
+WORKDIR /src
+
+# install app dependencies
+ENV PATH /src/node_modules/.bin:$PATH
+ADD package.json /src/package.json
+RUN npm install
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<p>Add the <code>users-service</code> to the <em>docker-compose.yml</em> file:</p>
+
+<pre><code>users-service:
+  container_name: users-service
+  build: ./services/users/
+  volumes:
+    - './services/users:/src/app'
+    - './services/users/package.json:/src/package.json'
+  ports:
+    - '3000:3000'
+  environment:
+    - DATABASE_URL=postgres://admin:admin@users-db:5432/node_docker_api_users_dev
+    - DATABASE_TEST_URL=postgres://admin:admin@users-db:5432/node_docker_api_users_test
+    - NODE_ENV=${NODE_ENV}
+    - TOKEN_SECRET=changeme
+  depends_on:
+    users-db:
+      condition: service_healthy
+  links:
+    - users-db
+</code></pre>
+
+<p>What&rsquo;s new here?</p>
+
+<ol>
+<li><code>volumes</code>: <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">volumes</a> are used to mount a directory into a container so that you can make changes to the code without having to build a new image. This should be a default in your local development environment so you can get quick feedback on code changes.</li>
+<li><code>depends_on</code>: <a href="https://docs.docker.com/compose/compose-file/#dependson">depends_on</a> is used to start services in a specific order. So, the <code>users-service</code> will wait for the <code>users-db</code> to fire up successfully (with an exit code of <code>0</code>) before it starts.</li>
+<li><code>links</code>: With <a href="https://docs.docker.com/compose/compose-file/#links">links</a>, code inside the <code>users-service</code> can access the database via <code>users-db:5432</code>.</li>
+</ol>
+
+
+<p>Set the <code>NODE_ENV</code> environment variable:</p>
+
+<pre><code class="sh">$ export NODE_ENV=development
+</code></pre>
+
+<p>Spin up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d users-service
+</code></pre>
+
+<p>Once up, create a new file in the project root called <em>migrate.sh</em> and add the Knex migrate and seed commands:</p>
+
+<pre><code class="sh">#!/bin/sh
+
+docker-compose run users-service knex migrate:latest --env development --knexfile app/knexfile.js
+docker-compose run users-service knex seed:run --env development --knexfile app/knexfile.js
+</code></pre>
+
+<p>Then run it:</p>
+
+<pre><code class="sh">$ sh migrate.sh
+</code></pre>
+
+<p>Test:</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint        </th>
+<th> HTTP Method </th>
+<th> CRUD Method </th>
+<th> Result        </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> /users/ping     </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> <code>pong</code>        </td>
+</tr>
+<tr>
+<td> /users/register </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> add a user    </td>
+</tr>
+<tr>
+<td> /users/login    </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> log in a user </td>
+</tr>
+<tr>
+<td> /users/user     </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get user info </td>
+</tr>
+</tbody>
+</table>
+
+
+<pre><code class="sh">$ http POST http://localhost:3000/users/register username=michael password=herman
+$ http POST http://localhost:3000/users/login username=michael password=herman
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> <code>http</code> in the above commands is part of the <a href="https://httpie.org/">HTTPie</a> library, which is a wrapper on top of cURL.</p></blockquote>
+
+<h2>Locations Service Setup</h2>
+
+<p>Add the <em>Dockerfile</em>:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /src
+WORKDIR /src
+
+# install app dependencies
+ENV PATH /src/node_modules/.bin:$PATH
+ADD package.json /src/package.json
+RUN npm install
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<p>Add the service to <em>docker-compose</em>:</p>
+
+<pre><code>locations-service:
+  container_name: locations-service
+  build: ./services/locations/
+  volumes:
+    - './services/locations:/src/app'
+    - './services/locations/package.json:/src/package.json'
+  ports:
+    - '3001:3001'
+  environment:
+    - DATABASE_URL=postgres://admin:admin@locations-db:5432/node_docker_api_locations_dev     
+    - DATABASE_TEST_URL=postgres://admin:admin@locations-db:5432/node_docker_api_locations_test
+    - NODE_ENV=${NODE_ENV}
+    - TOKEN_SECRET=changeme
+    - OPENWEATHERMAP_API_KEY=${OPENWEATHERMAP_API_KEY}
+  depends_on:
+    locations-db:
+      condition: service_healthy
+    users-service:
+      condition: service_started
+  links:
+    - locations-db
+    - users-service
+</code></pre>
+
+<p>Register with the <a href="https://openweathermap.org/api">OpenWeatherMap API</a>, and add the key as an environment variable:</p>
+
+<pre><code class="sh">$ export OPENWEATHERMAP_API_KEY=YOUR_KEY_HERE
+</code></pre>
+
+<p>Spin up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d locations-service
+</code></pre>
+
+<p>Add the migrate and seed commands to <em>migrate.sh</em>:</p>
+
+<pre><code class="sh">docker-compose run locations-service knex migrate:latest --env development --knexfile app/knexfile.js
+docker-compose run locations-service knex seed:run --env development --knexfile app/knexfile.js
+</code></pre>
+
+<p>Run it:</p>
+
+<pre><code class="sh">$ sh migrate.sh
+</code></pre>
+
+<p>Test:</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint         </th>
+<th> HTTP Method </th>
+<th> CRUD Method </th>
+<th> Result                    </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> /locations/ping  </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> <code>pong</code>                    </td>
+</tr>
+<tr>
+<td> /locations       </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get all locations         </td>
+</tr>
+<tr>
+<td> /locations/user  </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get all locations by user </td>
+</tr>
+<tr>
+<td> /locations/:id   </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get a single location     </td>
+</tr>
+<tr>
+<td> /locations       </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> add a single location     </td>
+</tr>
+<tr>
+<td> /locations/:id   </td>
+<td> PUT         </td>
+<td> UPDATE      </td>
+<td> update a single location  </td>
+</tr>
+<tr>
+<td> /locations/:id   </td>
+<td> DELETE      </td>
+<td> DELETE      </td>
+<td> delete a single location  </td>
+</tr>
+</tbody>
+</table>
+
+
+<pre><code class="sh">$ http GET http://localhost:3001/locations/ping
+</code></pre>
+
+<h2>Web Services Setup</h2>
+
+<p>Moving right along&hellip;</p>
+
+<p>Add the <em>Dockerfile</em>:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /src
+WORKDIR /src
+
+# install app dependencies
+ENV PATH /src/node_modules/.bin:$PATH
+ADD package.json /src/package.json
+RUN npm install
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<p>Add the service to <em>docker-compose</em>:</p>
+
+<pre><code>web:
+  container_name: web
+  build: ./web/
+  volumes:
+    - './web:/src/app'
+    - './web/package.json:/src/package.json'
+  ports:
+    - '3003:3003'
+  environment:
+    - NODE_ENV=${NODE_ENV}
+    - SECRET_KEY=changeme
+  depends_on:
+    users-service:
+      condition: service_started
+    locations-service:
+      condition: service_started
+  links:
+    - users-service
+    - locations-service
+</code></pre>
+
+<p>Spin up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d web
+</code></pre>
+
+<p>Navigate to <a href="http://localhost:3003">http://localhost:3003</a> in your browser and you should see the login page. Register a new user. Once redirected, you should see:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/node-docker-api-browser.png" style="max-width: 100%; border:0; box-shadow: none;" alt="node docker browser view">
+</div>
+
+
+<p><br></p>
+
+<p>Take a look at the AJAX request in the GET <code>/</code> route in <em>web/src/routes/index.js</em>. Why does the <code>uri</code> point to <code>locations-service</code> and not <code>localhost</code>? Well, <code>localhost</code> refers back to the container itself, so you need to set up a <a href="https://docs.docker.com/compose/compose-file/#links">link</a> in the Docker compose - which we&rsquo;ve already done.</p>
+
+<h2>Testing</h2>
+
+<p>Did you notice the unit and integration tests in the &ldquo;services/users/tests&rdquo; and &ldquo;services/locations/tests&rdquo; folders? Well, to run the tests properly, we need to update the <code>NODE_ENV</code> environment variable, since it is currently configured for the development environment.</p>
+
+<pre><code class="sh">$ export NODE_ENV=test
+</code></pre>
+
+<p>Update the containers:</p>
+
+<pre><code class="sh">$ docker-compose up -d
+</code></pre>
+
+<p>Then run the tests:</p>
+
+<pre><code class="sh">$ docker-compose run users-service npm test
+$ docker-compose run locations-service npm test
+</code></pre>
+
+<p>Ready to develop again?</p>
+
+<ol>
+<li>Update the env variable - <code>export NODE_ENV=development</code></li>
+<li>Update the containers - <code>docker-compose up -d</code></li>
+</ol>
+
+
+<h2>Workflow</h2>
+
+<p>Let&rsquo;s quickly look at how to work with code inside the containers&hellip;</p>
+
+<ol>
+<li>Live Reloading - Since the code is mounted in the container via a volume, you can make changes to the local code base which will be applied to the code in the container. <a href="https://github.com/remy/nodemon">Nodemon</a> is used (along with Gulp) to restart the app when changes occur.</li>
+<li>Debugging - <code>console.log</code> can be used for testing and debugging. Simply add one to your code base and then open the logs&hellip;</li>
+<li>Logs - run <code>docker-compose logs -f</code> to view the logs.</li>
+</ol>
+
+
+<blockquote><p><strong>NOTE:</strong> Check out the <a href="https://github.com/mjhea0/node-docker-api">repo</a> to view more commands.</p></blockquote>
+
+<p>Try it out:</p>
+
+<ol>
+<li>Run <code>docker-compose logs -f</code> in the terminal</li>
+<li>Add <code>console.log('here');</code> to the top of <em>web/src/routes/index.js</em></li>
+<li><p>As soon as you save, you should see the following in the terminal:</p>
+
+<pre><code class="`sh"> web  | [18:35:37] [nodemon] restarting due to changes...
+ web  | [18:35:37] [nodemon] running tasks...
+ web  | [18:35:39] Using gulpfile /src/app/gulpfile.js
+ web  | [18:35:39] Starting 'lint'...
+ web  | [18:35:40]
+ web  | /src/app/src/routes/index.js
+ web  |   1:1  warning  Unexpected console statement  no-console
+ web  |
+ web  | ✖ 1 problem (0 errors, 1 warning)
+ web  |
+ web  | [18:35:40] Finished 'lint' after 1.69 s
+ web  | [18:35:40] [nodemon] starting `node ./src/server`
+ web  | here
+</code></pre>
+
+<p> Essentially, Nodemon detected changes and restarted the app, which fired the linter and then the server fired back up.</p></li>
+</ol>
+
+
+<h2>Test Setup</h2>
+
+<p>Finally, to set up the last service, add the <em>Dockerfile</em> to the &ldquo;tests&rdquo; folder:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /src
+WORKDIR /src
+
+# install app dependencies
+ENV PATH /src/node_modules/.bin:$PATH
+ADD package.json /src/package.json
+RUN npm install
+</code></pre>
+
+<p>Then update the <em>docker-compose.yml</em> file:</p>
+
+<pre><code>tests:
+  container_name: tests
+  build: ./tests/
+  volumes:
+    - './tests:/src/app'
+    - './tests/package.json:/src/package.json'
+  depends_on:
+    users-service:
+      condition: service_started
+    locations-service:
+      condition: service_started
+  links:
+    - users-service
+    - locations-service
+    - web
+</code></pre>
+
+<p>Fire up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d tests
+</code></pre>
+
+<p>Update the environment variable, update the containers, and then run the tests:</p>
+
+<pre><code class="sh">$ export NODE_ENV=test
+$ docker-compose up -d
+$ docker-compose run tests npm test
+</code></pre>
+
+<h2>Next Steps</h2>
+
+<p>What&rsquo;s next?</p>
+
+<ol>
+<li><strong>Dependency management</strong>: Right now we&rsquo;re installing many of the same dependencies over and over again, in multiple containers. How can we manage this better to spin up new containers faster and save disc space? How about a data-only container that just houses dependencies?</li>
+<li><strong>Deployment prep</strong>: Set up Docker Machine for spinning up Docker environments, nginx for load balancing, and Consul for service discovery. Update the environment variables for the base URL since these will be different in production. Add an image registry solution and a data-only container for piping logs to&hellip;</li>
+<li><strong>Error handling</strong>: Right now errors are being thrown, but there really isn&rsquo;t much info in the response as to why, which makes debugging difficult. Be a good citizen and handle your errors properly since you may not always have access to the code base from a different service.</li>
+<li><strong>DRY</strong>: The code could be refactored in places, especially the tests.</li>
+</ol>
+
+
+<p>Grab the final code from the <a href="https://github.com/mjhea0/node-docker-api">node-docker-api</a> repo. Comment below. Cheers</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Functional Testing With TestCafe]]></title>
@@ -2924,1087 +3616,6 @@ exports.seed = (knex, Promise) =&gt; {
 <blockquote><p>Check out the <a href="https://news.ycombinator.com/item?id=13301105">HN Discussion</a> as well!</p></blockquote>
 
 <p>Did you enjoy this post? Please share. Sharing is caring.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Node, Passport, and Postgres]]></title>
-    <link href="http://mherman.org/blog/2016/09/25/node-passport-and-postgres/"/>
-    <updated>2016-09-25T13:10:34-06:00</updated>
-    <id>http://mherman.org/blog/2016/09/25/node-passport-and-postgres</id>
-    <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing authentication in a Node app using Passport and Postgres.</p>
-
-<h2>Contents</h2>
-
-<ol>
-<li>Objectives</li>
-<li>Project Setup</li>
-<li>Database Setup</li>
-<li>Passport Config</li>
-<li>Passport Local Config</li>
-<li>Password Hashing</li>
-<li>Auth Routes</li>
-<li>Validation</li>
-</ol>
-
-
-<blockquote><p>Updated <em>January 20th, 2017</em> - Refactored the <code>login()</code> route handler</p></blockquote>
-
-<h2>Objectives</h2>
-
-<p>By the end of this tutorial, you will be able to&hellip;</p>
-
-<ol>
-<li>Add <a href="https://github.com/jaredhanson/passport">Passport</a> and <a href="https://github.com/jaredhanson/passport-local">passport-local</a> to an Express app</li>
-<li>Configure <a href="https://www.npmjs.com/package/bcryptjs">bcrypt.js</a> for salting and hashing passwords</li>
-<li>Practice test driven development</li>
-<li>Register and authenticate a user</li>
-<li>Utilize sessions to store user information</li>
-<li>Use middleware to validate JSON payloads</li>
-</ol>
-
-
-<h2>Project Setup</h2>
-
-<p>Start by creating an Express boilerplate with the following <a href="https://www.npmjs.com/package/generator-galvanize-express">generator</a>:</p>
-
-<pre><code class="sh">$ npm install -g generator-galvanize-express@1.2.3
-</code></pre>
-
-<p>Once installed, create a new project directory, and then scaffold a new app:</p>
-
-<pre><code class="sh">$ yo galvanize-express
-? Your name (for the LICENSE)? Michael Herman
-? Project name (for package.json)? Change Me
-? Do you want to use Gulp Notify? No
-? Do you want to use pg-promise or Knex? knex
-? Database name? passport_local_knex
-</code></pre>
-
-<p>Install the dependencies, and then fire up the app by running <code>gulp</code> to make sure all is well.</p>
-
-<h2>Database Setup</h2>
-
-<p>We&rsquo;ll be using <a href="http://knexjs.org/">Knex.js</a> to interact with the database.</p>
-
-<blockquote><p><strong>NOTE</strong>: New to <a href="http://knexjs.org/">Knex.js</a>? Check out the <a href="http://knexjs.org/">documentation</a> along with the &ldquo;Database Setup&rdquo; section of the <a href="http://mherman.org/blog/2016/09/12/testing-node-and-express/">Testing Node and Express</a> blog post for more information on how to use it to interact with Postgres.</p></blockquote>
-
-<h3>Migrations</h3>
-
-<p>First, fire up your local Postgres server and create two new databases:</p>
-
-<pre><code class="sh">$ psql
-# create database passport_local_knex;
-CREATE DATABASE
-# create database passport_local_knex_test;
-CREATE DATABASE
-</code></pre>
-
-<p>Generate a new migration template:</p>
-
-<pre><code class="sh">$ knex migrate:make users
-</code></pre>
-
-<p>Then update the newly created file:</p>
-
-<pre><code class="javascript">exports.up = (knex, Promise) =&gt; {
-  return knex.schema.createTable('users', (table) =&gt; {
-    table.increments();
-    table.string('username').unique().notNullable();
-    table.string('password').notNullable();
-    table.boolean('admin').notNullable().defaultTo(false);
-    table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-  });
-};
-
-exports.down = (knex, Promise) =&gt; {
-  return knex.schema.dropTable('users');
-};
-</code></pre>
-
-<p>Apply the migration:</p>
-
-<pre><code class="sh">$ knex migrate:latest --env development
-</code></pre>
-
-<h3>Sanity Check</h3>
-
-<p>Did it work?</p>
-
-<pre><code class="sh">$ psql
-# \c passport_local_knex
-# \d
-
-                     List of relations
- Schema |          Name          |   Type   |     Owner
---------+------------------------+----------+---------------
- public | knex_migrations        | table    | michaelherman
- public | knex_migrations_id_seq | sequence | michaelherman
- public | knex_migrations_lock   | table    | michaelherman
- public | users                  | table    | michaelherman
- public | users_id_seq           | sequence | michaelherman
-(5 rows)
-</code></pre>
-
-<h2>Passport Config</h2>
-
-<p>Install <a href="https://github.com/jaredhanson/passport">Passport</a>:</p>
-
-<pre><code class="sh">$ npm install passport@0.3.2 --save
-</code></pre>
-
-<p>Update <em>src/server/config/main-config.js</em> to mount Passport to the app middleware and utilize <a href="https://www.npmjs.com/package/express-session">express-session</a> in order to save sessions server-side:</p>
-
-<pre><code class="javascript">// *** app middleware *** //
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
-}
-app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-// uncomment if using express-session
-app.use(session({
-  secret: process.env.SECRET_KEY,
-  resave: false,
-  saveUninitialized: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(flash());
-app.use(express.static(path.join(__dirname, '..', '..', 'client')));
-</code></pre>
-
-<p>Don&rsquo;t forget the dependency:</p>
-
-<pre><code class="javascript">const passport = require('passport');
-</code></pre>
-
-<p>Make sure to add a secret key to the <em>.env</em> file. You can use Python to generate a secure key:</p>
-
-<pre><code class="sh">$ python
-&gt;&gt;&gt; import os
-&gt;&gt;&gt; os.urandom(24)
-"\x02\xf3\xf7r\t\x9f\xee\xbbu\xb1\xe1\x90\xfe'\xab\xa6L6\xdd\x8d[\xccO\xfe"
-</code></pre>
-
-<p>Next, we need to handle serializing and de-serializing the user information into the session cookie. Create a new directory called &ldquo;auth&rdquo; in the &ldquo;server&rdquo; and add the following code into a new file called <em>passport.js</em>:</p>
-
-<pre><code class="javascript">const passport = require('passport');
-const knex = require('../db/connection');
-
-module.exports = () =&gt; {
-
-  passport.serializeUser((user, done) =&gt; {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser((id, done) =&gt; {
-    knex('users').where({id}).first()
-    .then((user) =&gt; { done(null, user); })
-    .catch((err) =&gt; { done(err,null); });
-  });
-
-};
-</code></pre>
-
-<h2>Passport Local Config</h2>
-
-<p>With Passport configured, we can now set up the  <a href="https://github.com/jaredhanson/passport-local">passport-local</a> strategy for authenticating with a username and password.</p>
-
-<p>Install:</p>
-
-<pre><code class="sh">$ npm install passport-local@1.0.0 --save
-</code></pre>
-
-<p>Create a new file in &ldquo;auth&rdquo; called <em>local.js</em>:</p>
-
-<pre><code class="javascript">const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-
-const init = require('./passport');
-const knex = require('../db/connection');
-
-const options = {};
-
-init();
-
-passport.use(new LocalStrategy(options, (username, password, done) =&gt; {
-  // check to see if the username exists
-  knex('users').where({ username }).first()
-  .then((user) =&gt; {
-    if (!user) return done(null, false);
-    if (!authHelpers.comparePass(password, user.password)) {
-      return done(null, false);
-    } else {
-      return done(null, user);
-    }
-  })
-  .catch((err) =&gt; { return done(err); });
-}));
-
-module.exports = passport;
-</code></pre>
-
-<p>Here, we check if the username exists in the database and then pass the appropriate results back to Passport via the callback.</p>
-
-<p>Flow:</p>
-
-<ul>
-<li>Does the username exist?
-
-<ul>
-<li>No? <code>false</code> is returned</li>
-<li>Yes? Does the password match?
-
-<ul>
-<li>No? <code>false</code> is returned</li>
-<li>Yes? The user object is returned</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-
-<p>Take note of the <code>comparePass()</code> function This helper function will be used to compare the provided password with the password in the database. Let&rsquo;s write that helper&hellip;</p>
-
-<h2>Password Hashing</h2>
-
-<p>Since you should never store plain text passwords, install <a href="https://www.npmjs.com/package/bcryptjs">bcrypt.js</a> for salting and hashing:</p>
-
-<pre><code class="sh">$ npm install bcryptjs@2.3.0 --save
-</code></pre>
-
-<p>Add a new file called <em>_helpers.js</em> to the &ldquo;auth&rdquo; folder:</p>
-
-<pre><code class="javascript">const bcrypt = require('bcryptjs');
-
-function comparePass(userPassword, databasePassword) {
-  return bcrypt.compareSync(userPassword, databasePassword);
-}
-
-module.exports = {
-  comparePass
-};
-</code></pre>
-
-<p>Back in the <em>local.js</em> file add the requirement:</p>
-
-<pre><code class="javascript">const authHelpers = require('./_helpers');
-</code></pre>
-
-<p>With that, we can now add the routes for handling authentication.</p>
-
-<h2>Auth Routes</h2>
-
-<p>Let&rsquo;s take a test-first approach to writing our routes:</p>
-
-<ul>
-<li><code>/auth/register</code></li>
-<li><code>/auth/login</code></li>
-<li><code>/auth/logout</code></li>
-<li><code>/user</code></li>
-<li><code>/admin</code></li>
-</ul>
-
-
-<p>Add the following code to a new file called <em>routes.auth.test.js</em> in &ldquo;test/integration&rdquo;:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-const chaiHttp = require('chai-http');
-chai.use(chaiHttp);
-
-const server = require('../../src/server/app');
-const knex = require('../../src/server/db/connection');
-
-describe('routes : auth', () =&gt; {
-
-  beforeEach(() =&gt; {
-    return knex.migrate.rollback()
-    .then(() =&gt; { return knex.migrate.latest(); });
-  });
-
-  afterEach(() =&gt; {
-    return knex.migrate.rollback();
-  });
-
-});
-</code></pre>
-
-<p>This is a common boilerplate for integration tests with <a href="http://chaijs.com/">Chai</a> assertions and <a href="https://github.com/chaijs/chai-http">Chai HTTP</a> for simulating user requests. For more info, check out <a href="http://mherman.org/blog/2016/04/28/test-driven-development-with-node/#.V-U1PZMrJE4">Test Driven Development With Node, Postgres, and Knex (Red/Green/Refactor)</a>.</p>
-
-<h3>Register</h3>
-
-<p>Start with a test:</p>
-
-<pre><code class="javascript">describe('POST /auth/register', () =&gt; {
-  it('should register a new user', (done) =&gt; {
-    chai.request(server)
-    .post('/auth/register')
-    .send({
-      username: 'michael',
-      password: 'herman'
-    })
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Init a new git repo and commit, and then run the tests. You should see the following error:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Not Found] to not exist
-</code></pre>
-
-<p>Now let&rsquo;s write the code to get the test to pass. First, register the new set of auth routes in <em>route-config.js</em>:</p>
-
-<pre><code class="javascript">(function (routeConfig) {
-
-  'use strict';
-
-  routeConfig.init = function (app) {
-
-    // *** routes *** //
-    const routes = require('../routes/index');
-    const authRoutes = require('../routes/auth');
-
-    // *** register routes *** //
-    app.use('/', routes);
-    app.use('/auth', authRoutes);
-
-  };
-
-})(module.exports);
-</code></pre>
-
-<p>Then add a new file to the &ldquo;route&rdquo; folder called <em>auth.js</em>:</p>
-
-<pre><code class="javascript">const express = require('express');
-const router = express.Router();
-
-const authHelpers = require('../auth/_helpers');
-const passport = require('../auth/local');
-
-router.post('/register', (req, res, next)  =&gt; {
-  return authHelpers.createUser(req, res)
-  .then((response) =&gt; {
-    passport.authenticate('local', (err, user, info) =&gt; {
-      if (user) { handleResponse(res, 200, 'success'); }
-    })(req, res, next);
-  })
-  .catch((err) =&gt; { handleResponse(res, 500, 'error'); });
-});
-
-function handleResponse(res, code, statusMsg) {
-  res.status(code).json({status: statusMsg});
-}
-
-module.exports = router;
-</code></pre>
-
-<p>This route simply handles the creation of a new user. To finish, add a <code>createUser()</code> function to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">function createUser (req) {
-  const salt = bcrypt.genSaltSync();
-  const hash = bcrypt.hashSync(req.body.password, salt);
-  return knex('users')
-  .insert({
-    username: req.body.username,
-    password: hash
-  })
-  .returning('*');
-}
-</code></pre>
-
-<p>Require Knex:</p>
-
-<pre><code class="javascript">const knex = require('../db/connection');
-</code></pre>
-
-<p>Export the function:</p>
-
-<pre><code class="javascript">module.exports = {
-  comparePass,
-  createUser
-};
-</code></pre>
-
-<p>Now let&rsquo;s test! All should pass:</p>
-
-<pre><code class="sh">npm test
-
-jscs
-  ✓ should pass for working directory (360ms)
-
-routes : auth
-  POST /auth/register
-    ✓ should register a new user (396ms)
-
-routes : index
-  GET /
-    ✓ should render the index
-  GET /404
-    ✓ should throw an error
-
-jshint
-  ✓ should pass for working directory (311ms)
-
-controllers : index
-  sum()
-    ✓ should return a total
-    ✓ should return an error
-
-
-7 passing (1s)
-</code></pre>
-
-<h3>Login</h3>
-
-<p>This time, let&rsquo;s look at how to handle both a success and an error&hellip;</p>
-
-<h4>Handle Success</h4>
-
-<p>Again, start with a test:</p>
-
-<pre><code class="javascript">describe('POST /auth/login', () =&gt; {
-  it('should login a user', (done) =&gt; {
-    chai.request(server)
-    .post('/auth/login')
-    .send({
-      username: 'jeremy',
-      password: 'johnson123'
-    })
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>You should see the following failure after running the test:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Not Found] to not exist
-</code></pre>
-
-<p>Now, let&rsquo;s update the code. Start by adding the route handler:</p>
-
-<pre><code class="javascript">router.post('/login', (req, res, next) =&gt; {
-  passport.authenticate('local', (err, user, info) =&gt; {
-    if (err) { handleResponse(res, 500, 'error'); }
-    if (!user) { handleResponse(res, 404, 'User not found'); }
-    if (user) {
-      req.logIn(user, function (err) {
-        if (err) { handleResponse(res, 500, 'error'); }
-        handleResponse(res, 200, 'success');
-      });
-    }
-  })(req, res, next);
-});
-</code></pre>
-
-<p>Run the test. You should see:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Not Found] to not exist
-</code></pre>
-
-<p>Why? Well, the user does not exist in the database. To fix this, we just need to seed the database before the tests are ran. Create a new seed file:</p>
-
-<pre><code class="sh">$ knex seed:make users
-</code></pre>
-
-<p>Then add the following code:</p>
-
-<pre><code class="javascript">const bcrypt = require('bcryptjs');
-
-exports.seed = (knex, Promise) =&gt; {
-  return knex('users').del()
-  .then(() =&gt; {
-    const salt = bcrypt.genSaltSync();
-    const hash = bcrypt.hashSync('johnson123', salt);
-    return Promise.join(
-      knex('users').insert({
-        username: 'jeremy',
-        password: hash
-      })
-    );
-  });
-};
-</code></pre>
-
-<p>Update the <code>beforeEach()</code>:</p>
-
-<pre><code class="javascript">beforeEach(() =&gt; {
-  return knex.migrate.rollback()
-  .then(() =&gt; { return knex.migrate.latest(); })
-  .then(() =&gt; { return knex.seed.run(); });
-});
-</code></pre>
-
-<p>Run the tests again. They should pass.</p>
-
-<h4>Handle Errors</h4>
-
-<p>Add another <code>it</code> block:</p>
-
-<pre><code class="javascript">it('should not login an unregistered user', (done) =&gt; {
-  chai.request(server)
-  .post('/auth/login')
-  .send({
-    username: 'michael',
-    password: 'johnson123'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(404);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('User not found');
-    done();
-  });
-});
-</code></pre>
-
-<p>The tests should still pass. What other errors should we handle? Think about this for a moment, and then write the tests. Once done, move on to logging out a user&hellip;</p>
-
-<h3>Logout</h3>
-
-<p>Test:</p>
-
-<pre><code class="javascript">describe('GET /auth/logout', () =&gt; {
-  it('should logout a user', (done) =&gt; {
-    chai.request(server)
-    .get('/auth/logout')
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Route handler:</p>
-
-<pre><code class="javascript">router.get('/logout', (req, res, next) =&gt; {
-  req.logout();
-  handleResponse(res, 200, 'success');
-});
-</code></pre>
-
-<p>What if the user is not logged in? They should not be able to access that endpoint. Let&rsquo;s rewrite the test. First, install <a href="https://github.com/gtramontina/passport-stub">passport-stub</a> for mocking an authenticated user:</p>
-
-<pre><code class="sh">$ npm install passport-stub@1.1.1 --save
-</code></pre>
-
-<p>Add the requirement to <em>test/integration/routes.auth.test.js</em>:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-const chaiHttp = require('chai-http');
-const passportStub = require('passport-stub');
-
-const server = require('../../src/server/app');
-const knex = require('../../src/server/db/connection');
-
-chai.use(chaiHttp);
-passportStub.install(server);
-</code></pre>
-
-<p>Update the <code>afterEach()</code>:</p>
-
-<pre><code class="javascript">afterEach(() =&gt; {
-  passportStub.logout();
-  return knex.migrate.rollback();
-});
-</code></pre>
-
-<p>Then update the test:</p>
-
-<pre><code class="javascript">describe('GET /auth/logout', () =&gt; {
-  it('should logout a user', (done) =&gt; {
-    passportStub.login({
-      username: 'jeremy',
-      password: 'johnson123'
-    });
-    chai.request(server)
-    .get('/auth/logout')
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Now add a new test:</p>
-
-<pre><code class="javascript">it('should throw an error if a user is not logged in', (done) =&gt; {
-  chai.request(server)
-  .get('/auth/logout')
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(401);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('Please log in');
-    done();
-  });
-});
-</code></pre>
-
-<p>Add a <code>loginRequired()</code> function to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">function loginRequired(req, res, next) {
-  if (!req.user) return res.status(401).json({status: 'Please log in'});
-  return next();
-}
-</code></pre>
-
-<p>Finally, update the route handler:</p>
-
-<pre><code class="javascript">router.get('/logout', authHelpers.loginRequired, (req, res, next) =&gt; {
-  req.logout();
-  handleResponse(res, 200, 'success');
-});
-</code></pre>
-
-<p>The tests should pass.</p>
-
-<h3>User</h3>
-
-<p>Once logged in, users should have access to the <code>/user</code> endpoint. Start with the tests:</p>
-
-<pre><code class="javascript">describe('GET /user', () =&gt; {
-  it('should return a success', (done) =&gt; {
-    passportStub.login({
-      username: 'jeremy',
-      password: 'johnson123'
-    });
-    chai.request(server)
-    .get('/user')
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-  it('should throw an error if a user is not logged in', (done) =&gt; {
-    chai.request(server)
-    .get('/user')
-    .end((err, res) =&gt; {
-      should.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(401);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('Please log in');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Add a new set of routes to <em>src/server/config/route-config.js</em>:</p>
-
-<pre><code class="javascript">(function (routeConfig) {
-
-  'use strict';
-
-  routeConfig.init = function (app) {
-
-    // *** routes *** //
-    const routes = require('../routes/index');
-    const authRoutes = require('../routes/auth');
-    const userRoutes = require('../routes/user');
-
-    // *** register routes *** //
-    app.use('/', routes);
-    app.use('/auth', authRoutes);
-    app.use('/', userRoutes);
-
-  };
-
-})(module.exports);
-</code></pre>
-
-<p>Add the route handler:</p>
-
-<pre><code class="javascript">const express = require('express');
-const router = express.Router();
-
-const authHelpers = require('../auth/_helpers');
-
-router.get('/user', authHelpers.loginRequired, (req, res, next)  =&gt; {
-  handleResponse(res, 200, 'success');
-});
-
-function handleResponse(res, code, statusMsg) {
-  res.status(code).json({status: statusMsg});
-}
-
-module.exports = router;
-</code></pre>
-
-<p>The tests should now pass.</p>
-
-<h3>Admin</h3>
-
-<p>Add the tests:</p>
-
-<pre><code class="javascript">describe('GET /admin', () =&gt; {
-  it('should return a success', (done) =&gt; {
-    passportStub.login({
-      username: 'kelly',
-      password: 'bryant123'
-    });
-    chai.request(server)
-    .get('/admin')
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-  it('should throw an error if a user is not logged in', (done) =&gt; {
-    chai.request(server)
-    .get('/user')
-    .end((err, res) =&gt; {
-      should.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(401);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('Please log in');
-      done();
-    });
-  });
-  it('should throw an error if a user is not an admin', (done) =&gt; {
-    passportStub.login({
-      username: 'jeremy',
-      password: 'johnson123'
-    });
-    chai.request(server)
-    .get('/admin')
-    .end((err, res) =&gt; {
-      should.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(401);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('You are not authorized');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Add the route handler:</p>
-
-<pre><code class="javascript">router.get('/admin', authHelpers.adminRequired, (req, res, next)  =&gt; {
-  handleResponse(res, 200, 'success');
-});
-</code></pre>
-
-<p>Add the helper function:</p>
-
-<pre><code class="javascript">function adminRequired(req, res, next) {
-  if (!req.user) res.status(401).json({status: 'Please log in'});
-  return knex('users').where({username: req.user.username}).first()
-  .then((user) =&gt; {
-    if (!user.admin) res.status(401).json({status: 'You are not authorized'});
-    return next();
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({status: 'Something bad happened'});
-  });
-}
-</code></pre>
-
-<p>Export the function:</p>
-
-<pre><code class="javascript">module.exports = {
-  comparePass,
-  createUser,
-  loginRequired,
-  adminRequired
-};
-</code></pre>
-
-<p>Update the seed file:</p>
-
-<pre><code class="javascript">const bcrypt = require('bcryptjs');
-
-exports.seed = (knex, Promise) =&gt; {
-  return knex('users').del()
-  .then(() =&gt; {
-    const salt = bcrypt.genSaltSync();
-    const hash = bcrypt.hashSync('johnson123', salt);
-    return Promise.join(
-      knex('users').insert({
-        username: 'jeremy',
-        password: hash
-      })
-    );
-  })
-  .then(() =&gt; {
-    const salt = bcrypt.genSaltSync();
-    const hash = bcrypt.hashSync('bryant123', salt);
-    return Promise.join(
-      knex('users').insert({
-        username: 'kelly',
-        password: hash,
-        admin: true
-      })
-    );
-  });
-};
-</code></pre>
-
-<p>The tests should now pass.</p>
-
-<h3>Helper</h3>
-
-<p>Take a quick look at the <code>/auth/register</code> and <code>/auth/login</code> endpoints. What happens if there is a user already logged in? As of now, the user can still access those routes, so add another helper function to prevent access:</p>
-
-<pre><code class="javascript">function loginRedirect(req, res, next) {
-  if (req.user) return res.status(401).json(
-    {status: 'You are already logged in'});
-  return next();
-}
-</code></pre>
-
-<p>Update the route handlers:</p>
-
-<pre><code class="javascript">router.post('/register', authHelpers.loginRedirect, (req, res, next)  =&gt; {
-  return authHelpers.createUser(req, res)
-  .then((user) =&gt; {
-    handleLogin(res, user[0]);
-  })
-  .then(() =&gt; { handleResponse(res, 200, 'success'); })
-  .catch((err) =&gt; { handleResponse(res, 500, 'error'); });
-});
-
-router.post('/login', authHelpers.loginRedirect, (req, res, next) =&gt; {
-  passport.authenticate('local', (err, user, info) =&gt; {
-    if (err) { handleResponse(res, 500, 'error'); }
-    if (!user) { handleResponse(res, 404, 'User not found'); }
-    if (user) {
-      req.logIn(user, function (err) {
-        if (err) { handleResponse(res, 500, 'error'); }
-        handleResponse(res, 200, 'success');
-      });
-    }
-  })(req, res, next);
-});
-</code></pre>
-
-<p>Add a new test to <code>describe('POST /auth/register', () =&gt; {</code>:</p>
-
-<pre><code class="javascript">it('should throw an error if a user is logged in', (done) =&gt; {
-  passportStub.login({
-    username: 'jeremy',
-    password: 'johnson123'
-  });
-  chai.request(server)
-  .post('/auth/register')
-  .send({
-    username: 'michael',
-    password: 'herman'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(401);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('You are already logged in');
-    done();
-  });
-});
-</code></pre>
-
-<p>And add a new test to <code>describe('POST /auth/login', () =&gt; {</code>:</p>
-
-<pre><code class="javascript">it('should throw an error if a user is logged in', (done) =&gt; {
-  passportStub.login({
-    username: 'jeremy',
-    password: 'johnson123'
-  });
-  chai.request(server)
-  .post('/auth/login')
-  .send({
-    username: 'jeremy',
-    password: 'johnson123'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(401);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('You are already logged in');
-    done();
-  });
-});
-</code></pre>
-
-<p>Run the tests again. All should pass. Write some unit tests before moving on.</p>
-
-<h2>Validation</h2>
-
-<p>At this point we&rsquo;ve covered most of the basic functionality. We can add some additional validation rules by first adding the helper function to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">function handleErrors(req) {
-  return new Promise((resolve, reject) =&gt; {
-    if (req.body.username.length &lt; 6) {
-      reject({
-        message: 'Username must be longer than 6 characters'
-      });
-    }
-    else if (req.body.password.length &lt; 6) {
-      reject({
-        message: 'Password must be longer than 6 characters'
-      });
-    } else {
-      resolve();
-    }
-  });
-}
-</code></pre>
-
-<p>And then update <code>createUser()</code>:</p>
-
-<pre><code class="javascript">function createUser(req, res) {
-  return handleErrors(req)
-  .then(() =&gt; {
-    const salt = bcrypt.genSaltSync();
-    const hash = bcrypt.hashSync(req.body.password, salt);
-    return knex('users')
-    .insert({
-      username: req.body.username,
-      password: hash
-    })
-    .returning('*');
-  })
-  .catch((err) =&gt; {
-    res.status(400).json({status: err.message});
-  });
-}
-</code></pre>
-
-<p>Finally, add two new tests to <code>POST /auth/register</code>:</p>
-
-<pre><code class="javascript">it('should throw an error if the username is &lt; 6 characters', (done) =&gt; {
-  chai.request(server)
-  .post('/auth/register')
-  .send({
-    username: 'six',
-    password: 'herman'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(400);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('Username must be longer than 6 characters');
-    done();
-  });
-});
-it('should throw an error if the password is &lt; 6 characters', (done) =&gt; {
-  chai.request(server)
-  .post('/auth/register')
-  .send({
-    username: 'michael',
-    password: 'six'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.redirects.length.should.eql(0);
-    res.status.should.eql(400);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('Password must be longer than 6 characters');
-    done();
-  });
-});
-</code></pre>
-
-<p>Run the tests:</p>
-
-<pre><code class="sh">$ npm test
-
-  jscs
-    ✓ should pass for working directory (752ms)
-
-  routes : auth
-    POST /auth/register
-      ✓ should register a new user (498ms)
-      ✓ should throw an error if a user is logged in
-      ✓ should throw an error if the username is &lt; 6 characters
-      ✓ should throw an error if the password is &lt; 6 characters
-    POST /auth/login
-      ✓ should login a user (291ms)
-      ✓ should not login an unregistered user
-      ✓ should throw an error if a user is logged in
-    GET /auth/logout
-      ✓ should logout a user
-      ✓ should throw an error if a user is not logged in
-    GET /user
-      ✓ should return a success
-      ✓ should throw an error if a user is not logged in
-    GET /admin
-      ✓ should return a success
-      ✓ should throw an error if a user is not logged in
-      ✓ should throw an error if a user is not an admin
-
-  routes : index
-    GET /
-      ✓ should render the index
-    GET /404
-      ✓ should throw an error
-
-  jshint
-    ✓ should pass for working directory (493ms)
-
-  controllers : index
-    sum()
-      ✓ should return a total
-      ✓ should return an error
-
-
-  20 passing (13s)
-</code></pre>
-
-<p>Yay!</p>
-
-<hr />
-
-<p><br></p>
-
-<p>Grab the code from the <a href="https://github.com/mjhea0/passport-local-knex">repo</a>.</p>
 ]]></content>
   </entry>
   

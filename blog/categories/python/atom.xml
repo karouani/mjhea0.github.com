@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-04-22T19:09:12-06:00</updated>
+  <updated>2017-04-26T08:23:47-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,584 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Flask for Node Developers]]></title>
+    <link href="http://mherman.org/blog/2017/04/26/flask-for-node-developers/"/>
+    <updated>2017-04-26T08:46:05-06:00</updated>
+    <id>http://mherman.org/blog/2017/04/26/flask-for-node-developers</id>
+    <content type="html"><![CDATA[<p><strong>Today we&rsquo;ll be going through how to build a basic CRUD server-side application using Python and <a href="http://flask.pocoo.org/">Flask</a>, geared toward JavaScript developers versed in Node and Express</strong>. Similar to <a href="https://expressjs.com/">Express</a>, <a href="http://flask.pocoo.org/">Flask</a> is a simple, yet powerful micro-framework for Python, perfect for RESTful APIs.</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/flask-node.png" style="max-width: 100%; border:0; box-shadow: none;" alt="flask and node">
+</div>
+
+
+<p><br></p>
+
+<blockquote><p>This tutorial uses Flask v<a href="https://pypi.python.org/pypi/Flask/0.12.1">0.12.1</a> and Python v<a href="https://www.python.org/downloads/release/python-361/">3.6.1</a>.</p></blockquote>
+
+<h2>Contents</h2>
+
+<ol>
+<li>Objectives</li>
+<li>Project Setup</li>
+<li>Database Setup</li>
+<li>Routes</li>
+<li>Next Steps</li>
+</ol>
+
+
+<h2>Objectives</h2>
+
+<p>By the end of this tutorial, you should be able to&hellip;</p>
+
+<ol>
+<li>Set up a Python development environment</li>
+<li>Create and activate a virtual environment</li>
+<li>Using SQLite, apply a schema to the database and interact with the database using the basic CRUD functions</li>
+<li>Build a CRUD app using Python and Flask</li>
+</ol>
+
+
+<h2>Project Setup</h2>
+
+<p>Before we start, ensure that you have <a href="https://www.python.org/downloads/release/python-361/">Python v3.6.1</a> installed.</p>
+
+<p>Along with Python, we also need <a href="https://pypi.python.org/pypi/pip">pip</a> to install third-party packages from the <a href="https://pypi.python.org/pypi">Python Package Index</a> (aka PyPI), the Python equivalent of npm. Fortunately, this comes pre-installed with all Python versions >= 3.4.</p>
+
+<p>Let&rsquo;s start by creating a new project directory:</p>
+
+<pre><code class="sh">$ mkdir flask-songs-api &amp;&amp; cd flask-songs-api
+</code></pre>
+
+<p>Next up, we&rsquo;ll create an isolated virtual environment for installing Python packages specific to our individual project. It&rsquo;s <a href="https://www.python.org/dev/peps/pep-0405/#isolation-from-system-site-packages">standard practice</a> to set up a virtual environment for each project, otherwise there can be compatibility issues with different dependencies.</p>
+
+<pre><code class="sh">$ python3.6 -m venv env
+</code></pre>
+
+<p>Next, we need to activate it:</p>
+
+<pre><code class="sh">$ source env/bin/activate
+</code></pre>
+
+<p>You should now see <code>env</code> in your prompt, indicating that the virtual environment is activated.</p>
+
+<blockquote><p><strong>NOTE:</strong> Ready to stop developing? Use the <code>deactivate</code> command to deactivate the virtual environment. To activate it again, navigate to the directory and re-run the source command - <code>source env/bin/activate</code>.</p></blockquote>
+
+<p>Now we can install Flask:</p>
+
+<pre><code class="sh">$ pip install Flask==0.12.1
+$ pip freeze &gt; requirements.txt
+</code></pre>
+
+<p>Now is a great time to add a <em>.gitignore</em>:</p>
+
+<pre><code>env
+*.db
+</code></pre>
+
+<p>Finally, let&rsquo;s add a main app file, which will handle routing and run our application, along with a file to setup our database schema:</p>
+
+<pre><code class="sh">$ touch app.py models.py
+</code></pre>
+
+<h2>Database Setup</h2>
+
+<p>For this tutorial, we will be using <a href="https://www.sqlite.org/">SQLite3</a> since it&rsquo;s part of the <a href="https://docs.python.org/3.5/library/sqlite3.html">Python standard library</a>, requires little (if any) configuration, and is powerful enough for small to mid-size applications (e.g., the majority of web apps).</p>
+
+<p>Start by creating a new database file in your project root:</p>
+
+<pre><code class="sh">$ touch songs.db
+</code></pre>
+
+<p>Now start a new SQLite session:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+</code></pre>
+
+<p>Then run:</p>
+
+<pre><code class="sh">sqlite&gt; .databases
+</code></pre>
+
+<p>You should see a file path to your database file, which is empty at the moment and ready for us to create a schema and data to. To create a schema, add the following code to <em>models.py</em>:</p>
+
+<pre><code class="python">import sqlite3
+
+
+def drop_table():
+    with sqlite3.connect('songs.db') as connection:
+        c = connection.cursor()
+        c.execute("""DROP TABLE IF EXISTS songs;""")
+    return True
+
+
+def create_db():
+    with sqlite3.connect('songs.db') as connection:
+        c = connection.cursor()
+        table = """CREATE TABLE songs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            artist TEXT NOT NULL,
+            title TEXT NOT NULL,
+            rating INTEGER NOT NULL
+        );
+        """
+        c.execute(table)
+    return True
+
+
+if __name__ == '__main__':
+    drop_table()
+    create_db()
+</code></pre>
+
+<p>This will drop the songs table if it exists and put a new one in place with the schema we&rsquo;ve defined here. If you have any issues with your database later on, or if you just want to start fresh, you can always run this script to recreate the database. Back in the terminal, exit SQLite and then run the script to create our table:</p>
+
+<pre><code class="sh">sqlite&gt; .exit
+$ python models.py
+</code></pre>
+
+<p>Let&rsquo;s check if that actually worked:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; .table
+songs
+sqlite&gt; .schema
+CREATE TABLE songs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            artist TEXT NOT NULL,
+            title TEXT NOT NULL,
+            rating INTEGER NOT NULL
+        );
+sqlite&gt; .exit
+</code></pre>
+
+<p>Great! So, now that our database is set up correctly, we can move on to setting up our app&rsquo;s route handlers. For this post, we won&rsquo;t be going into database migrations but if you ever want to change the schema, you can use <a href="https://flask-migrate.readthedocs.io/en/latest/">Flask-Migrate</a>.</p>
+
+<h2>Routes</h2>
+
+<p>Let&rsquo;s start with an overview of the routes, following RESTful principles:</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint              </th>
+<th> Result                </th>
+<th> CRUD   </th>
+<th> HTTP   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> <code>/api/songs</code>          </td>
+<td> Returns all songs     </td>
+<td> Read   </td>
+<td> GET    </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Returns a single song </td>
+<td> Read   </td>
+<td> GET    </td>
+</tr>
+<tr>
+<td> <code>/api/songs</code>          </td>
+<td> Adds a single song    </td>
+<td> Create </td>
+<td> POST   </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Updates a single song </td>
+<td> Update </td>
+<td> PUT    </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Deletes a single song </td>
+<td> Delete </td>
+<td> DELETE </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>But first, before creating any routes, add the following code to <em>app.py</em>:</p>
+
+<pre><code class="python">import sqlite3
+from flask import Flask
+
+
+app = Flask(__name__)
+
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run()
+</code></pre>
+
+<p>Here we imported <code>sqlite3</code> along with the main <a href="http://flask.pocoo.org/docs/0.12/api/#application-object">Flask application object</a>, <code>Flask</code>, which creates an instance of Flask in our application. The Flask application object acts as the central object, which we can use as a way of calling our view functions, adding our URL rules, template configuration and much more. With that instance we can run the application using the <code>run</code> <a href="http://flask.pocoo.org/docs/0.12/api/#flask.Flask.run">method</a>. We also set the <a href="http://flask.pocoo.org/docs/0.12/api/#flask.Flask.debug">debug flag</a> to <code>True</code> so that the server live reloads when code changes and provides an interactive debugger when an exception is thrown.</p>
+
+<blockquote><p><strong>NOTE:</strong> <code>if __name__ == '__main__'</code> states that this source file is our main program. Any files imported from other modules will have their name set to their module name. This is because you may sometimes have modules that could be executed directly as well as be imported into a main app file. This line means that the code in those modules will only execute when you want to run the module as a program, and not have it execute when someone just wants to import a module and execute it themselves.</p></blockquote>
+
+<p>Finally, it&rsquo;s important to note that any imports must go at the top of our <em>app.py</em> file. These must come before anything else in order to be used later on in our file.</p>
+
+<p>Now, add the routes:</p>
+
+<pre><code class="python">import sqlite3
+from flask import Flask, request
+
+
+app = Flask(__name__)
+
+
+@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        pass  # Handle GET all Request
+    elif request.method == 'POST':
+        pass  # Handle POST request
+
+
+@app.route('/api/song&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        pass  # Handle GET single request
+    elif request.method == 'PUT':
+        pass  # Handle UPDATE request
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run()
+</code></pre>
+
+<p>We imported <code>request</code>, which handles, well, HTTP requests (no surprises there). Let&rsquo;s look at each method, staring with a POST:</p>
+
+<h3>POST</h3>
+
+<p>The first thing we need to do is add data to our database. Once we&rsquo;ve done this, we can start building and testing the rest of our database/CRUD functions.</p>
+
+<p>The process is simple:</p>
+
+<ol>
+<li>Create a connection to our database</li>
+<li>Execute our SQL query to add a song</li>
+<li>Commit the changes to the database</li>
+<li>Close the database connection</li>
+<li>Return an object</li>
+</ol>
+
+
+<p>We can write a single function to handle this. Let&rsquo;s place all helper functions underneath the routes, to keep things nicely separated:</p>
+
+<pre><code class="python"># helper functions
+
+def add_song(artist, title, rating):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO songs (artist, title, rating) values (?, ?, ?);
+                """, (artist, title, rating,))
+            result = {'status': 1, 'message': 'Song Added'}
+    except:
+        result = {'status': 0, 'message': 'error'}
+    return result
+</code></pre>
+
+<p>Now we can just use this function in our route handler, passing the correct arguments from an incoming POST request:</p>
+
+<pre><code class="python">@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        pass  # Handle GET all Request
+    elif request.method == 'POST':
+        data = request.form
+        result = add_song(data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+</code></pre>
+
+<p>So, we grabbed the values from the incoming form request, then called the <code>add_song()</code> function to add that song to the database, and, finally, returned the appropriate JSON response.</p>
+
+<p>Make sure to add <code>jsonify</code> to the imports in order to send a JSON response back:</p>
+
+<pre><code class="python">from flask import Flask, request, jsonify
+</code></pre>
+
+<p>Ready to test? Start the server in one terminal window:</p>
+
+<pre><code class="sh">$ python app.py
+</code></pre>
+
+<p>Now, in another window use CURL to send a POST request:</p>
+
+<pre><code class="sh">$ curl --data "artist='Hudson Mohawke'&amp;title='Cbat'&amp;rating=5" http://localhost:5000/api/songs
+</code></pre>
+
+<p>If all went well, you should see the follwing response, indicating that the song was added to the database:</p>
+
+<pre><code class="sh">{
+  "message": "Song Added",
+  "status": 1
+}
+</code></pre>
+
+<p>Just to be on the safe side, let&rsquo;s double-check that. Kill the server, then open a SQLite session from within your project directory:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+</code></pre>
+
+<p>Now run the following SQL query:</p>
+
+<pre><code class="sh">sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+</code></pre>
+
+<p>You should see:</p>
+
+<pre><code>1|'Hudson Mohawke'|'Cbat'|5`
+</code></pre>
+
+<p>Okay. We have officially added our first song! Add a couple more before moving on to reading data (GET). Don&rsquo;t forget to run the Flask server before running the CURL commands!</p>
+
+<pre><code class="sh">$ curl --data "artist='Beastie Boys'&amp;title='Sabotage'&amp;rating=4" http://localhost:5000/api/songs
+$ curl --data "artist='Gregori Klosman'&amp;title='Jaws'&amp;rating=3" http://localhost:5000/api/songs
+</code></pre>
+
+<h3>GET</h3>
+
+<p>We&rsquo;ll start with our GET all route, e.g. - <code>api/songs</code>. We need to connect to the database, execute the appropriate SQL query, and then return all of the songs from that query:</p>
+
+<pre><code class="python">def get_all_songs():
+    with sqlite3.connect('songs.db') as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM songs ORDER BY id desc")
+        all_songs = cursor.fetchall()
+        return all_songs
+</code></pre>
+
+<p>Next up, we have to change our route handler to now call this function and then send back JSON:</p>
+
+<pre><code class="python">@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        all_songs = get_all_songs()
+        return json.dumps(all_songs)
+    elif request.method == 'POST':
+        data = request.form
+        result = add_song(data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+</code></pre>
+
+<p>Did you notice that we&rsquo;re using the <code>json</code> module? This is also from the Python standard library, which allows us to convert the &lsquo;list&rsquo;-like format of data we get back from SQLite3 into a JSON object. Just don&rsquo;t forget to import it:</p>
+
+<pre><code class="python">import json
+</code></pre>
+
+<p>To test, we can simply navigate to <a href="http://127.0.0.1:5000/api/songs">http://127.0.0.1:5000/api/songs</a> in the browser to check if all our songs are there.</p>
+
+<p>You should see something like:</p>
+
+<pre><code class="json">[
+  [
+    3,
+    "'Gregori Klosman'",
+    "'Jaws'",
+    3
+  ],
+  [
+    2,
+    "'Beastie Boys'",
+    "'Sabotage'",
+    4
+  ],
+  [
+    1,
+    "'Hudson Mohawke'",
+    "'Cbat'",
+    5
+  ]
+]
+</code></pre>
+
+<p>Now that we can GET all songs, let&rsquo;s build a function to GET just a single song. This function will take a parameter of <code>song_id</code>, create a connection to our database, find that song with a SQL query, and then return that song with JSON:</p>
+
+<pre><code class="python">def get_single_song(song_id):
+    with sqlite3.connect('songs.db') as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM songs WHERE id = ?", (song_id,))
+        song = cursor.fetchone()
+        return song
+</code></pre>
+
+<p>We can update our route with a <code>song_id</code> as a parameter, and send back the single song:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        pass  # Handle UPDATE request
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+</code></pre>
+
+<p>If you now point your browser to <a href="http://127.0.0.1:5000/api/song/2">http://127.0.0.1:5000/api/song/2</a> you should see the JSON object for our song with an id of <code>2</code> in the database:</p>
+
+<pre><code class="json">[
+    2,
+    "'Beastie Boys'",
+    "'Sabotage'",
+    4
+]
+</code></pre>
+
+<p>If you try to put in an id that we don&rsquo;t have in the database currently, you will just get <code>null</code> displayed on the page instead of a JSON object.</p>
+
+<p>We can CREATE a song, READ all songs, and READ a single song. Only two more routes to go&hellip;</p>
+
+<h3>PUT</h3>
+
+<p>A major function that we&rsquo;re missing is the ability to edit data that&rsquo;s already present in our database. We do this using a PUT request by taking incoming data with an id passed through the URL, finding the object in our database with that particular id, and then updating it.</p>
+
+<p>Let&rsquo;s start with an edit function, which takes in the song id, artist, title, and rating as arguments:</p>
+
+<pre><code class="python">def edit_song(song_id, artist, title, rating):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            connection.execute("UPDATE songs SET artist = ?, title = ?, rating = ? WHERE ID = ?;", (artist, title, rating, song_id,))
+            result = {'status': 1, 'message': 'SONG Edited'}
+    except:
+        result = {'status': 0, 'message': 'Error'}
+    return result
+</code></pre>
+
+<p>Now we can edit our route to pass in the data from the PUT request:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        data = request.form
+        result = edit_song(
+            song_id, data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+</code></pre>
+
+<p>So if we test this route out with CURL:</p>
+
+<pre><code class="sh">$ curl -X PUT --data "artist='Van Halen'&amp;title='Hot for Teacher'&amp;rating=3" localhost:5000/api/song/2
+</code></pre>
+
+<p>We should see:</p>
+
+<pre><code class="sh">{
+  "message": "SONG Edited",
+  "status": 1
+}
+</code></pre>
+
+<p>We can (err, should) make sure that edit is reflected in the database:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>We can edit songs at will!</p>
+
+<h3>Delete</h3>
+
+<p>The last thing we have left to do is our DELETE route. We need to be able to remove data from our database. Let&rsquo;s first add in a song we can then delete using CURL in the terminal:</p>
+
+<pre><code class="sh">$ curl --data "artist='The Flaming Lips'&amp;title='Buggin'&amp;rating=2" http://localhost:5000/api/songs
+</code></pre>
+
+<p>Make sure it&rsquo;s in our database:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+4|'The Flaming Lips'|'Buggin'|2
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>We need to build a delete function:</p>
+
+<pre><code class="python">def delete_song(song_id):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            connection.execute("DELETE FROM songs WHERE ID = ?;", (song_id,))
+            result = {'status': 1, 'message': 'SONG Deleted'}
+    except:
+        result = {'status': 0, 'message': 'Error'}
+    return result
+</code></pre>
+
+<p>And now let&rsquo;s add in our delete route:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        data = request.form
+        result = edit_song(
+            song_id, data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+    elif request.method == 'DELETE':
+        result = delete_song(song_id)
+        return jsonify(result)
+</code></pre>
+
+<p>Test it with CURL:</p>
+
+<pre><code class="sh">$ curl -X DELETE localhost:5000/api/song/4
+
+{
+  "message": "SONG Deleted",
+  "status": 1
+}
+</code></pre>
+
+<p>And finally, go back into our database and really make sure it&rsquo;s gone:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>Boom! So we now have all of our routes doing <em>exactly</em> what we want them to do. We can add songs, get the songs back (all, or just a single song), edit a song, and remove a song. That&rsquo;s some quality CRUD right there.</p>
+
+<h2>Next Steps</h2>
+
+<ol>
+<li><em>Error Handling</em>: The code we have right now is completely reliant on the data coming through correctly, but what if there&rsquo;s something missing when the user sends a POST request? For example, what would happen if the artist name was missing? Right now we aren&rsquo;t handling errors that may come up. Think about how we can send information back to the user if not all fields are present in the POST or PUT request, and how you could be clear in the error messages we send back to the user.</li>
+<li><em>Server-side Templating</em>: Build out your client-side by adding <a href="http://flask.pocoo.org/docs/0.12/quickstart/#static-files">static files</a> and <a href="http://flask.pocoo.org/docs/0.12/quickstart/#rendering-templates">templates</a>.</li>
+<li><em>Database Management:</em> Refactor SQLite and vanilla SQL out of your application and add in Postgres, <a href="http://flask-sqlalchemy.pocoo.org/2.1/">Flask-SQLAlchemy</a> (for communicating with the database), and <a href="https://flask-migrate.readthedocs.io/en/latest/">Flask-Migrate</a> (for migrations). Check out <a href="https://github.com/mjhea0/flask-songs-api/tree/master/_live">this example</a> of how to use Postgres and Flask-SQLAlchemy.</li>
+</ol>
+
+
+<p>Grab the code from the <a href="https://github.com/mjhea0/flask-songs-api">flask-songs-api</a> repo. Cheers!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Custom Apache Config for PHP and Web2Py]]></title>
@@ -760,108 +1338,6 @@ db.register.email.requires=IS_NOT_IN_DB(db,'register.email')
 <p>Thanks for reading. Cheers.</p>
 
 <p>You can find the new code for db.py, display_your_form.html, and default.py, as well as all the files and the final packed app (.w2p) <a href="https://github.com/mjhea0/web2py/tree/master/form%20-%20part%204">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Crash Course in Web2py (Part 4 - Managing Form Records)]]></title>
-    <link href="http://mherman.org/blog/2012/12/09/crash-course-in-web2py-part-4-managing-form-records/"/>
-    <updated>2012-12-09T22:32:00-07:00</updated>
-    <id>http://mherman.org/blog/2012/12/09/crash-course-in-web2py-part-4-managing-form-records</id>
-    <content type="html"><![CDATA[<p>Alright. In this tutorial I&rsquo;ll show you how to modify the controller so that the end user can update and delete records. At this point, I assume:</p>
-
-<ol>
-<li>You have web2py already installed => <a href="http://mherman.org/blog/2012/11/27/crash-course-in-web2py-part-1/">part 1</a></li>
-<li>You created the skeleton web form => <a href="http://mherman.org/blog/2012/12/01/crash-course-in-web2py-part-2-web-forms/">part 2</a></li>
-<li>You added data validation (with the help of Han Solo) => <a href="http://mherman.org/blog/2012/12/06/crash-course-in-web2py-part-3-form-validation/">part 3</a></li>
-</ol>
-
-
-<p>Let&rsquo;s begin &hellip;</p>
-
-<p>(1) Launch the server. (2) Go to the admin interface. (3) Edit the &ldquo;form&rdquo; application.</p>
-
-<h2><strong>Controller</strong></h2>
-
-<p>Add the following code to <em>default.py</em> just before the SQLFORM function, then add the variable to the function itself:</p>
-
-<pre><code class="python">update = db.register(request.args(0))
-form = SQLFORM(db.register, update)
-</code></pre>
-
-<p>Essentially, <em>request.args()</em> pulls up a user record associated with a specific unique ID.</p>
-
-<h2>Test</h2>
-
-<p>Test this out by adding a new record to the database @ <a href="http://127.0.0.1:8000/form/default/display_your_form.html">http://127.0.0.1:8000/form/default/display_your_form.html</a>. Make note of the unique id in the <em>Accepted Fields</em> section.</p>
-
-<p><img src="http://www.backwardsteps.com/uploads/2012-12-08_2055.png" alt="" /></p>
-
-<p>Now append that unique id to the end of the base URL - e.g., <a href="http://127.0.0.1:8000/form/default/display_your_form/21">http://127.0.0.1:8000/form/default/display_your_form/21</a> - and the record should appear on a new page, which the user can update.</p>
-
-<hr />
-
-<p>Please note: you can add <em>writable=False</em> or <em>readable=False</em> to the fields in the database to prevent a user from either editing or viewing a particular field. In the example below, I added <em>writable=False</em> to the <em>first_name</em> field.</p>
-
-<p><img src="http://www.backwardsteps.com/uploads/2012-12-08_2111.png" alt="" /></p>
-
-<p>So, now the user can only edit the last name and email fields.</p>
-
-<hr />
-
-<p>Moving on, for this process to work right, the user making the edits must know the unique id beforehand, which is unrealistic. web2py has a solution for that - <em>grid</em>.</p>
-
-<h2>Controller</h2>
-
-<p>The <em>grid</em> method is just wonderful. You have to see it to believe it. Quickly now, add the following function to <em>default.py</em>:</p>
-
-<pre><code class="python">def all_records():
-    grid = SQLFORM.grid(db.register,user_signature=False)
-    return locals()
-</code></pre>
-
-<p>Navigate to the following URL - <a href="http://127.0.0.1:8000/form/default/all_records">http://127.0.0.1:8000/form/default/all_records</a></p>
-
-<p>Wow.</p>
-
-<p>The end user can now perform the CRUD functions as well as search and sort all the records in the database - and it literally took twenty seconds to add this functionality. You can, of course, also require user authentication so only certain users can edit, while other users have read-only access.</p>
-
-<h2>Model</h2>
-
-<p>Finally, let&rsquo;s add two more validators to the form. Go to your database.</p>
-
-<p>I want the user to validate his/her email address and I want it to be unique, so update db.py with the following code:</p>
-
-<pre><code class="python">db = DAL('sqlite://webform.sqlite')
-db.define_table('register',
-    Field('first_name', requires=[IS_NOT_EMPTY(), IS_ALPHANUMERIC()]),
-    Field('last_name', requires=[IS_NOT_EMPTY(), IS_ALPHANUMERIC()]),
-    Field('email', unique=True, requires=[IS_NOT_EMPTY(), IS_EMAIL()]),
-    Field('email_validate',requires=IS_EQUAL_TO(request.vars.email)))
-db.register.email.requires=IS_NOT_IN_DB(db,'register.email')
-</code></pre>
-
-<p>Take note of lines 5, 6, and 7.</p>
-
-<h2>Test</h2>
-
-<p>Test this by first trying two different email addresses:</p>
-
-<p><img src="http://www.backwardsteps.com/uploads/2012-12-08_2238.png" alt="" /></p>
-
-<p>Then test it again with an email you know is already in the database.</p>
-
-<p><img src="http://www.backwardsteps.com/uploads/2012-12-08_2240.png" alt="" /></p>
-
-<p>Perfect.</p>
-
-<p>Well, we could edit the actual errors that populate, but that&rsquo;s a bit more complicated. They&rsquo;ll suffice for now.</p>
-
-<h2>Recap</h2>
-
-<p>Again, by adding just a few statements we added much functionality to our form, highlighting the power of such web frameworks like web2py. Well. that&rsquo;s it for now. In the <a href="http://mherman.org/blog/2012/12/10/crash-course-in-web2py-part-5-modifying-the-appearance-and-deploying-the-web-form/#.U5bvQJRdUZ0">next</a> tutorial, I&rsquo;ll show you in brief how to modify the form&rsquo;s appearance via the CSS files. Oh - and we&rsquo;ll finally deploy the finished app!</p>
-
-<p>You can find the new code for db.py, display_your_form.html, and default.py <a href="https://github.com/mjhea0/web2py/tree/master/form%20-%20part%203">here</a>.</p>
 ]]></content>
   </entry>
   

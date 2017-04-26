@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-04-22T19:09:12-06:00</updated>
+  <updated>2017-04-26T08:23:47-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,584 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Flask for Node Developers]]></title>
+    <link href="http://mherman.org/blog/2017/04/26/flask-for-node-developers/"/>
+    <updated>2017-04-26T08:46:05-06:00</updated>
+    <id>http://mherman.org/blog/2017/04/26/flask-for-node-developers</id>
+    <content type="html"><![CDATA[<p><strong>Today we&rsquo;ll be going through how to build a basic CRUD server-side application using Python and <a href="http://flask.pocoo.org/">Flask</a>, geared toward JavaScript developers versed in Node and Express</strong>. Similar to <a href="https://expressjs.com/">Express</a>, <a href="http://flask.pocoo.org/">Flask</a> is a simple, yet powerful micro-framework for Python, perfect for RESTful APIs.</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/flask-node.png" style="max-width: 100%; border:0; box-shadow: none;" alt="flask and node">
+</div>
+
+
+<p><br></p>
+
+<blockquote><p>This tutorial uses Flask v<a href="https://pypi.python.org/pypi/Flask/0.12.1">0.12.1</a> and Python v<a href="https://www.python.org/downloads/release/python-361/">3.6.1</a>.</p></blockquote>
+
+<h2>Contents</h2>
+
+<ol>
+<li>Objectives</li>
+<li>Project Setup</li>
+<li>Database Setup</li>
+<li>Routes</li>
+<li>Next Steps</li>
+</ol>
+
+
+<h2>Objectives</h2>
+
+<p>By the end of this tutorial, you should be able to&hellip;</p>
+
+<ol>
+<li>Set up a Python development environment</li>
+<li>Create and activate a virtual environment</li>
+<li>Using SQLite, apply a schema to the database and interact with the database using the basic CRUD functions</li>
+<li>Build a CRUD app using Python and Flask</li>
+</ol>
+
+
+<h2>Project Setup</h2>
+
+<p>Before we start, ensure that you have <a href="https://www.python.org/downloads/release/python-361/">Python v3.6.1</a> installed.</p>
+
+<p>Along with Python, we also need <a href="https://pypi.python.org/pypi/pip">pip</a> to install third-party packages from the <a href="https://pypi.python.org/pypi">Python Package Index</a> (aka PyPI), the Python equivalent of npm. Fortunately, this comes pre-installed with all Python versions >= 3.4.</p>
+
+<p>Let&rsquo;s start by creating a new project directory:</p>
+
+<pre><code class="sh">$ mkdir flask-songs-api &amp;&amp; cd flask-songs-api
+</code></pre>
+
+<p>Next up, we&rsquo;ll create an isolated virtual environment for installing Python packages specific to our individual project. It&rsquo;s <a href="https://www.python.org/dev/peps/pep-0405/#isolation-from-system-site-packages">standard practice</a> to set up a virtual environment for each project, otherwise there can be compatibility issues with different dependencies.</p>
+
+<pre><code class="sh">$ python3.6 -m venv env
+</code></pre>
+
+<p>Next, we need to activate it:</p>
+
+<pre><code class="sh">$ source env/bin/activate
+</code></pre>
+
+<p>You should now see <code>env</code> in your prompt, indicating that the virtual environment is activated.</p>
+
+<blockquote><p><strong>NOTE:</strong> Ready to stop developing? Use the <code>deactivate</code> command to deactivate the virtual environment. To activate it again, navigate to the directory and re-run the source command - <code>source env/bin/activate</code>.</p></blockquote>
+
+<p>Now we can install Flask:</p>
+
+<pre><code class="sh">$ pip install Flask==0.12.1
+$ pip freeze &gt; requirements.txt
+</code></pre>
+
+<p>Now is a great time to add a <em>.gitignore</em>:</p>
+
+<pre><code>env
+*.db
+</code></pre>
+
+<p>Finally, let&rsquo;s add a main app file, which will handle routing and run our application, along with a file to setup our database schema:</p>
+
+<pre><code class="sh">$ touch app.py models.py
+</code></pre>
+
+<h2>Database Setup</h2>
+
+<p>For this tutorial, we will be using <a href="https://www.sqlite.org/">SQLite3</a> since it&rsquo;s part of the <a href="https://docs.python.org/3.5/library/sqlite3.html">Python standard library</a>, requires little (if any) configuration, and is powerful enough for small to mid-size applications (e.g., the majority of web apps).</p>
+
+<p>Start by creating a new database file in your project root:</p>
+
+<pre><code class="sh">$ touch songs.db
+</code></pre>
+
+<p>Now start a new SQLite session:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+</code></pre>
+
+<p>Then run:</p>
+
+<pre><code class="sh">sqlite&gt; .databases
+</code></pre>
+
+<p>You should see a file path to your database file, which is empty at the moment and ready for us to create a schema and data to. To create a schema, add the following code to <em>models.py</em>:</p>
+
+<pre><code class="python">import sqlite3
+
+
+def drop_table():
+    with sqlite3.connect('songs.db') as connection:
+        c = connection.cursor()
+        c.execute("""DROP TABLE IF EXISTS songs;""")
+    return True
+
+
+def create_db():
+    with sqlite3.connect('songs.db') as connection:
+        c = connection.cursor()
+        table = """CREATE TABLE songs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            artist TEXT NOT NULL,
+            title TEXT NOT NULL,
+            rating INTEGER NOT NULL
+        );
+        """
+        c.execute(table)
+    return True
+
+
+if __name__ == '__main__':
+    drop_table()
+    create_db()
+</code></pre>
+
+<p>This will drop the songs table if it exists and put a new one in place with the schema we&rsquo;ve defined here. If you have any issues with your database later on, or if you just want to start fresh, you can always run this script to recreate the database. Back in the terminal, exit SQLite and then run the script to create our table:</p>
+
+<pre><code class="sh">sqlite&gt; .exit
+$ python models.py
+</code></pre>
+
+<p>Let&rsquo;s check if that actually worked:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; .table
+songs
+sqlite&gt; .schema
+CREATE TABLE songs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            artist TEXT NOT NULL,
+            title TEXT NOT NULL,
+            rating INTEGER NOT NULL
+        );
+sqlite&gt; .exit
+</code></pre>
+
+<p>Great! So, now that our database is set up correctly, we can move on to setting up our app&rsquo;s route handlers. For this post, we won&rsquo;t be going into database migrations but if you ever want to change the schema, you can use <a href="https://flask-migrate.readthedocs.io/en/latest/">Flask-Migrate</a>.</p>
+
+<h2>Routes</h2>
+
+<p>Let&rsquo;s start with an overview of the routes, following RESTful principles:</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint              </th>
+<th> Result                </th>
+<th> CRUD   </th>
+<th> HTTP   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> <code>/api/songs</code>          </td>
+<td> Returns all songs     </td>
+<td> Read   </td>
+<td> GET    </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Returns a single song </td>
+<td> Read   </td>
+<td> GET    </td>
+</tr>
+<tr>
+<td> <code>/api/songs</code>          </td>
+<td> Adds a single song    </td>
+<td> Create </td>
+<td> POST   </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Updates a single song </td>
+<td> Update </td>
+<td> PUT    </td>
+</tr>
+<tr>
+<td> <code>/api/song/&lt;song_id&gt;</code> </td>
+<td> Deletes a single song </td>
+<td> Delete </td>
+<td> DELETE </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>But first, before creating any routes, add the following code to <em>app.py</em>:</p>
+
+<pre><code class="python">import sqlite3
+from flask import Flask
+
+
+app = Flask(__name__)
+
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run()
+</code></pre>
+
+<p>Here we imported <code>sqlite3</code> along with the main <a href="http://flask.pocoo.org/docs/0.12/api/#application-object">Flask application object</a>, <code>Flask</code>, which creates an instance of Flask in our application. The Flask application object acts as the central object, which we can use as a way of calling our view functions, adding our URL rules, template configuration and much more. With that instance we can run the application using the <code>run</code> <a href="http://flask.pocoo.org/docs/0.12/api/#flask.Flask.run">method</a>. We also set the <a href="http://flask.pocoo.org/docs/0.12/api/#flask.Flask.debug">debug flag</a> to <code>True</code> so that the server live reloads when code changes and provides an interactive debugger when an exception is thrown.</p>
+
+<blockquote><p><strong>NOTE:</strong> <code>if __name__ == '__main__'</code> states that this source file is our main program. Any files imported from other modules will have their name set to their module name. This is because you may sometimes have modules that could be executed directly as well as be imported into a main app file. This line means that the code in those modules will only execute when you want to run the module as a program, and not have it execute when someone just wants to import a module and execute it themselves.</p></blockquote>
+
+<p>Finally, it&rsquo;s important to note that any imports must go at the top of our <em>app.py</em> file. These must come before anything else in order to be used later on in our file.</p>
+
+<p>Now, add the routes:</p>
+
+<pre><code class="python">import sqlite3
+from flask import Flask, request
+
+
+app = Flask(__name__)
+
+
+@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        pass  # Handle GET all Request
+    elif request.method == 'POST':
+        pass  # Handle POST request
+
+
+@app.route('/api/song&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        pass  # Handle GET single request
+    elif request.method == 'PUT':
+        pass  # Handle UPDATE request
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run()
+</code></pre>
+
+<p>We imported <code>request</code>, which handles, well, HTTP requests (no surprises there). Let&rsquo;s look at each method, staring with a POST:</p>
+
+<h3>POST</h3>
+
+<p>The first thing we need to do is add data to our database. Once we&rsquo;ve done this, we can start building and testing the rest of our database/CRUD functions.</p>
+
+<p>The process is simple:</p>
+
+<ol>
+<li>Create a connection to our database</li>
+<li>Execute our SQL query to add a song</li>
+<li>Commit the changes to the database</li>
+<li>Close the database connection</li>
+<li>Return an object</li>
+</ol>
+
+
+<p>We can write a single function to handle this. Let&rsquo;s place all helper functions underneath the routes, to keep things nicely separated:</p>
+
+<pre><code class="python"># helper functions
+
+def add_song(artist, title, rating):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO songs (artist, title, rating) values (?, ?, ?);
+                """, (artist, title, rating,))
+            result = {'status': 1, 'message': 'Song Added'}
+    except:
+        result = {'status': 0, 'message': 'error'}
+    return result
+</code></pre>
+
+<p>Now we can just use this function in our route handler, passing the correct arguments from an incoming POST request:</p>
+
+<pre><code class="python">@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        pass  # Handle GET all Request
+    elif request.method == 'POST':
+        data = request.form
+        result = add_song(data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+</code></pre>
+
+<p>So, we grabbed the values from the incoming form request, then called the <code>add_song()</code> function to add that song to the database, and, finally, returned the appropriate JSON response.</p>
+
+<p>Make sure to add <code>jsonify</code> to the imports in order to send a JSON response back:</p>
+
+<pre><code class="python">from flask import Flask, request, jsonify
+</code></pre>
+
+<p>Ready to test? Start the server in one terminal window:</p>
+
+<pre><code class="sh">$ python app.py
+</code></pre>
+
+<p>Now, in another window use CURL to send a POST request:</p>
+
+<pre><code class="sh">$ curl --data "artist='Hudson Mohawke'&amp;title='Cbat'&amp;rating=5" http://localhost:5000/api/songs
+</code></pre>
+
+<p>If all went well, you should see the follwing response, indicating that the song was added to the database:</p>
+
+<pre><code class="sh">{
+  "message": "Song Added",
+  "status": 1
+}
+</code></pre>
+
+<p>Just to be on the safe side, let&rsquo;s double-check that. Kill the server, then open a SQLite session from within your project directory:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+</code></pre>
+
+<p>Now run the following SQL query:</p>
+
+<pre><code class="sh">sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+</code></pre>
+
+<p>You should see:</p>
+
+<pre><code>1|'Hudson Mohawke'|'Cbat'|5`
+</code></pre>
+
+<p>Okay. We have officially added our first song! Add a couple more before moving on to reading data (GET). Don&rsquo;t forget to run the Flask server before running the CURL commands!</p>
+
+<pre><code class="sh">$ curl --data "artist='Beastie Boys'&amp;title='Sabotage'&amp;rating=4" http://localhost:5000/api/songs
+$ curl --data "artist='Gregori Klosman'&amp;title='Jaws'&amp;rating=3" http://localhost:5000/api/songs
+</code></pre>
+
+<h3>GET</h3>
+
+<p>We&rsquo;ll start with our GET all route, e.g. - <code>api/songs</code>. We need to connect to the database, execute the appropriate SQL query, and then return all of the songs from that query:</p>
+
+<pre><code class="python">def get_all_songs():
+    with sqlite3.connect('songs.db') as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM songs ORDER BY id desc")
+        all_songs = cursor.fetchall()
+        return all_songs
+</code></pre>
+
+<p>Next up, we have to change our route handler to now call this function and then send back JSON:</p>
+
+<pre><code class="python">@app.route('/api/songs', methods=['GET', 'POST'])
+def collection():
+    if request.method == 'GET':
+        all_songs = get_all_songs()
+        return json.dumps(all_songs)
+    elif request.method == 'POST':
+        data = request.form
+        result = add_song(data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+</code></pre>
+
+<p>Did you notice that we&rsquo;re using the <code>json</code> module? This is also from the Python standard library, which allows us to convert the &lsquo;list&rsquo;-like format of data we get back from SQLite3 into a JSON object. Just don&rsquo;t forget to import it:</p>
+
+<pre><code class="python">import json
+</code></pre>
+
+<p>To test, we can simply navigate to <a href="http://127.0.0.1:5000/api/songs">http://127.0.0.1:5000/api/songs</a> in the browser to check if all our songs are there.</p>
+
+<p>You should see something like:</p>
+
+<pre><code class="json">[
+  [
+    3,
+    "'Gregori Klosman'",
+    "'Jaws'",
+    3
+  ],
+  [
+    2,
+    "'Beastie Boys'",
+    "'Sabotage'",
+    4
+  ],
+  [
+    1,
+    "'Hudson Mohawke'",
+    "'Cbat'",
+    5
+  ]
+]
+</code></pre>
+
+<p>Now that we can GET all songs, let&rsquo;s build a function to GET just a single song. This function will take a parameter of <code>song_id</code>, create a connection to our database, find that song with a SQL query, and then return that song with JSON:</p>
+
+<pre><code class="python">def get_single_song(song_id):
+    with sqlite3.connect('songs.db') as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM songs WHERE id = ?", (song_id,))
+        song = cursor.fetchone()
+        return song
+</code></pre>
+
+<p>We can update our route with a <code>song_id</code> as a parameter, and send back the single song:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        pass  # Handle UPDATE request
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+</code></pre>
+
+<p>If you now point your browser to <a href="http://127.0.0.1:5000/api/song/2">http://127.0.0.1:5000/api/song/2</a> you should see the JSON object for our song with an id of <code>2</code> in the database:</p>
+
+<pre><code class="json">[
+    2,
+    "'Beastie Boys'",
+    "'Sabotage'",
+    4
+]
+</code></pre>
+
+<p>If you try to put in an id that we don&rsquo;t have in the database currently, you will just get <code>null</code> displayed on the page instead of a JSON object.</p>
+
+<p>We can CREATE a song, READ all songs, and READ a single song. Only two more routes to go&hellip;</p>
+
+<h3>PUT</h3>
+
+<p>A major function that we&rsquo;re missing is the ability to edit data that&rsquo;s already present in our database. We do this using a PUT request by taking incoming data with an id passed through the URL, finding the object in our database with that particular id, and then updating it.</p>
+
+<p>Let&rsquo;s start with an edit function, which takes in the song id, artist, title, and rating as arguments:</p>
+
+<pre><code class="python">def edit_song(song_id, artist, title, rating):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            connection.execute("UPDATE songs SET artist = ?, title = ?, rating = ? WHERE ID = ?;", (artist, title, rating, song_id,))
+            result = {'status': 1, 'message': 'SONG Edited'}
+    except:
+        result = {'status': 0, 'message': 'Error'}
+    return result
+</code></pre>
+
+<p>Now we can edit our route to pass in the data from the PUT request:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        data = request.form
+        result = edit_song(
+            song_id, data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+    elif request.method == 'DELETE':
+        pass  # Handle DELETE request
+</code></pre>
+
+<p>So if we test this route out with CURL:</p>
+
+<pre><code class="sh">$ curl -X PUT --data "artist='Van Halen'&amp;title='Hot for Teacher'&amp;rating=3" localhost:5000/api/song/2
+</code></pre>
+
+<p>We should see:</p>
+
+<pre><code class="sh">{
+  "message": "SONG Edited",
+  "status": 1
+}
+</code></pre>
+
+<p>We can (err, should) make sure that edit is reflected in the database:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>We can edit songs at will!</p>
+
+<h3>Delete</h3>
+
+<p>The last thing we have left to do is our DELETE route. We need to be able to remove data from our database. Let&rsquo;s first add in a song we can then delete using CURL in the terminal:</p>
+
+<pre><code class="sh">$ curl --data "artist='The Flaming Lips'&amp;title='Buggin'&amp;rating=2" http://localhost:5000/api/songs
+</code></pre>
+
+<p>Make sure it&rsquo;s in our database:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+4|'The Flaming Lips'|'Buggin'|2
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>We need to build a delete function:</p>
+
+<pre><code class="python">def delete_song(song_id):
+    try:
+        with sqlite3.connect('songs.db') as connection:
+            connection.execute("DELETE FROM songs WHERE ID = ?;", (song_id,))
+            result = {'status': 1, 'message': 'SONG Deleted'}
+    except:
+        result = {'status': 0, 'message': 'Error'}
+    return result
+</code></pre>
+
+<p>And now let&rsquo;s add in our delete route:</p>
+
+<pre><code class="py">@app.route('/api/song/&lt;song_id&gt;', methods=['GET', 'PUT', 'DELETE'])
+def resource(song_id):
+    if request.method == 'GET':
+        song = get_single_song(song_id)
+        return json.dumps(song)
+    elif request.method == 'PUT':
+        data = request.form
+        result = edit_song(
+            song_id, data['artist'], data['title'], data['rating'])
+        return jsonify(result)
+    elif request.method == 'DELETE':
+        result = delete_song(song_id)
+        return jsonify(result)
+</code></pre>
+
+<p>Test it with CURL:</p>
+
+<pre><code class="sh">$ curl -X DELETE localhost:5000/api/song/4
+
+{
+  "message": "SONG Deleted",
+  "status": 1
+}
+</code></pre>
+
+<p>And finally, go back into our database and really make sure it&rsquo;s gone:</p>
+
+<pre><code class="sh">$ sqlite3 songs.db
+sqlite&gt; SELECT * FROM songs ORDER BY id desc;
+
+3|'Gregori Klosman'|'Jaws'|3
+2|'Van Halen'|'Hot for Teacher'|3
+1|'Hudson Mohawke'|'Cbat'|5
+</code></pre>
+
+<p>Boom! So we now have all of our routes doing <em>exactly</em> what we want them to do. We can add songs, get the songs back (all, or just a single song), edit a song, and remove a song. That&rsquo;s some quality CRUD right there.</p>
+
+<h2>Next Steps</h2>
+
+<ol>
+<li><em>Error Handling</em>: The code we have right now is completely reliant on the data coming through correctly, but what if there&rsquo;s something missing when the user sends a POST request? For example, what would happen if the artist name was missing? Right now we aren&rsquo;t handling errors that may come up. Think about how we can send information back to the user if not all fields are present in the POST or PUT request, and how you could be clear in the error messages we send back to the user.</li>
+<li><em>Server-side Templating</em>: Build out your client-side by adding <a href="http://flask.pocoo.org/docs/0.12/quickstart/#static-files">static files</a> and <a href="http://flask.pocoo.org/docs/0.12/quickstart/#rendering-templates">templates</a>.</li>
+<li><em>Database Management:</em> Refactor SQLite and vanilla SQL out of your application and add in Postgres, <a href="http://flask-sqlalchemy.pocoo.org/2.1/">Flask-SQLAlchemy</a> (for communicating with the database), and <a href="https://flask-migrate.readthedocs.io/en/latest/">Flask-Migrate</a> (for migrations). Check out <a href="https://github.com/mjhea0/flask-songs-api/tree/master/_live">this example</a> of how to use Postgres and Flask-SQLAlchemy.</li>
+</ol>
+
+
+<p>Grab the code from the <a href="https://github.com/mjhea0/flask-songs-api">flask-songs-api</a> repo. Cheers!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Developing and Testing Microservices With Docker]]></title>
@@ -2942,680 +3520,6 @@ GET api/v1/heroes
 
 
 <p>Now you&rsquo;re up and running with Express and TypeScript 2.0. Go build something! You can grab the code from the <a href="https://github.com/mjhea0/typescript-node-api">typescript-node-api</a> repo. Cheers!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Token-Based Authentication With Node]]></title>
-    <link href="http://mherman.org/blog/2016/10/28/token-based-authentication-with-node/"/>
-    <updated>2016-10-28T07:36:51-06:00</updated>
-    <id>http://mherman.org/blog/2016/10/28/token-based-authentication-with-node</id>
-    <content type="html"><![CDATA[<p>This tutorial takes a test-first approach to implementing token-based authentication in a Node app using JSON Web Tokens (JWTs) and Postgres.</p>
-
-<h2>Contents</h2>
-
-<ol>
-<li>Objectives</li>
-<li>Introduction</li>
-<li>Project Setup</li>
-<li>Database Setup</li>
-<li>JWT Setup</li>
-<li>Auth Routes</li>
-<li>Conclusion</li>
-</ol>
-
-
-<h2>Objectives</h2>
-
-<p>By the end of this tutorial, you will be able to&hellip;</p>
-
-<ol>
-<li>Discuss the benefits of using JWTs versus sessions and cookies</li>
-<li>Implement user authentication using JWTs</li>
-<li>Write tests to create and verify JWTs and user authentication</li>
-<li>Practice test-driven development</li>
-</ol>
-
-
-<h2>Introduction</h2>
-
-<p><a href="https://jwt.io/">JSON Web Tokens</a> (or JWTs) provide a means of authenticating every request from the client to the server in a stateless, secure way. On the server, JWTs are generated by signing user information via a secret key, which are then securely stored on the client. This form of auth works well with modern, single page applications. For more on this, along with the pros and cons of using JWTs vs. session and cookie-based auth, please review the following articles:</p>
-
-<ol>
-<li><a href="https://auth0.com/blog/cookies-vs-tokens-definitive-guide/">Cookies vs Tokens: The Definitive Guide</a></li>
-<li><a href="http://stackoverflow.com/questions/17000835/token-authentication-vs-cookies">Token Authentication vs. Cookies</a></li>
-</ol>
-
-
-<blockquote><p><strong>NOTE:</strong> Keep in mind that since a JWT is <a href="http://stackoverflow.com/questions/454048/what-is-the-difference-between-encrypting-and-signing-in-asymmetric-encryption">signed rather than encrypted</a> it should never contain sensitive information like a user&rsquo;s password.</p></blockquote>
-
-<h2>Project Setup</h2>
-
-<p>Start by cloning the project structure:</p>
-
-<pre><code class="sh">$ git clone https://github.com/mjhea0/node-token-auth --branch v1 --single-branch -b master
-</code></pre>
-
-<blockquote><p><strong>NOTE</strong>: This project structure is based off of the Express boilerplate from the following <a href="https://www.npmjs.com/package/generator-galvanize-express">generator</a> (v1.2.4). What are the differences?</p></blockquote>
-
-<p>Install the dependencies, and then fire up the app by running <code>gulp</code> to make sure all is well. Kill the server. Run the tests with <code>npm test</code>. They all should pass.</p>
-
-<p>This is optional, but it&rsquo;s a good idea to create a new Github repository and update the remote:</p>
-
-<pre><code class="sh">$ git remote set-url origin &lt;newurl&gt;
-</code></pre>
-
-<h2>Database Setup</h2>
-
-<p>We&rsquo;ll be using <a href="http://knexjs.org/">Knex.js</a> to interact with the database.</p>
-
-<blockquote><p><strong>NOTE</strong>: Are you new to <a href="http://knexjs.org/">Knex.js</a>? Check out the <a href="http://knexjs.org/">documentation</a> along with the &ldquo;Database Setup&rdquo; section of the <a href="http://mherman.org/blog/2016/09/12/testing-node-and-express/">Testing Node and Express</a> blog post for more information on how to use it to interact with Postgres.</p></blockquote>
-
-<h3>Migrations</h3>
-
-<p>First, fire up your local Postgres server and create two new databases:</p>
-
-<pre><code class="sh">$ psql
-# create database node_token_auth;
-CREATE DATABASE
-# create database node_token_auth_test;
-CREATE DATABASE
-</code></pre>
-
-<p>Generate a new migration template:</p>
-
-<pre><code class="sh">$ knex migrate:make users
-</code></pre>
-
-<p>Then update the newly created file in &ldquo;src/server/db/migrations/&rdquo;:</p>
-
-<pre><code class="javascript">exports.up = (knex, Promise) =&gt; {
-  return knex.schema.createTable('users', (table) =&gt; {
-    table.increments();
-    table.string('username').unique().notNullable();
-    table.string('password').notNullable();
-    table.boolean('admin').notNullable().defaultTo(false);
-    table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-  });
-};
-
-exports.down = (knex, Promise) =&gt; {
-  return knex.schema.dropTable('users');
-};
-</code></pre>
-
-<p>Apply the migration:</p>
-
-<pre><code class="sh">$ knex migrate:latest --env development
-</code></pre>
-
-<h3>Sanity Check</h3>
-
-<p>Did it work?</p>
-
-<pre><code class="sh">$ psql
-# \c node_token_auth
-# \d
-
-                     List of relations
- Schema |          Name          |   Type   |     Owner
---------+------------------------+----------+---------------
- public | knex_migrations        | table    | michaelherman
- public | knex_migrations_id_seq | sequence | michaelherman
- public | knex_migrations_lock   | table    | michaelherman
- public | users                  | table    | michaelherman
- public | users_id_seq           | sequence | michaelherman
-(5 rows)
-</code></pre>
-
-<h2>JWT Setup</h2>
-
-<p>First install the <a href="https://www.npmjs.com/package/jwt-simple">jwt-simple</a> package for managing JSON Web Tokens:</p>
-
-<pre><code class="sh">$ npm install jwt-simple@0.5.0 --save
-</code></pre>
-
-<blockquote><p><strong>NOTE:</strong> As the name suggests, jwt-simple is a minimal JWT library. It is not recommended for a production app. <a href="https://github.com/auth0/node-jsonwebtoken">jsonwebtoken</a> is a more robust option. Want a challenge? Use jsonwebtoken for the app in this blog post.</p></blockquote>
-
-<h3>Encode Token</h3>
-
-<p>Create a new folder called &ldquo;auth&rdquo; in &ldquo;src/server/&rdquo;. Then add a file called <em>local.js</em> to the &ldquo;auth&rdquo; folder:</p>
-
-<pre><code class="javascript">const moment = require('moment');
-const jwt = require('jwt-simple');
-
-function encodeToken(user) {
-  const playload = {
-    exp: moment().add(14, 'days').unix(),
-    iat: moment().unix(),
-    sub: user.id
-  };
-  return jwt.encode(playload, process.env.TOKEN_SECRET);
-}
-
-module.exports = {
-  encodeToken
-};
-</code></pre>
-
-<p>Given a user object, this function creates and returns a token from the <code>playload</code> and the secret key, <code>process.env.TOKEN_SECRET</code>. Put simply, the payload is where we add metadata about the token and information about the user. This info is often referred to as <a href="https://scotch.io/tutorials/the-anatomy-of-a-json-web-token#payload">JWT Claims</a>. In the code above we utilize the following &ldquo;claims&rdquo;:</p>
-
-<ul>
-<li><code>exp</code>: expiration date of the token</li>
-<li><code>iat</code>: the time the token is generated</li>
-<li><code>sub</code>: the subject of the token (the user whom it identifies)</li>
-</ul>
-
-
-<p>The secret key must be random and only accessible server-side. Use the <a href="https://github.com/broofa/node-uuid">node-uuid</a> library or Python to generate a key:</p>
-
-<pre><code class="sh">$ python
-&gt;&gt;&gt; import os
-&gt;&gt;&gt; os.urandom(24)
-b'\xf8%\xa8\xf2INz\xcc:\x171\xeei\x82\xce\x81Y\xc2HJ\xe5\x01\xf3$'
-&gt;&gt;&gt;
-</code></pre>
-
-<p>Then add the key to a new file called <em>.env</em>:</p>
-
-<pre><code>TOKEN_SECRET=\xf8%\xa8\xf2INz\xcc:\x171\xeei\x82\xce\x81Y\xc2HJ\xe5\x01\xf3$
-</code></pre>
-
-<p>Don&rsquo;t forget to install <a href="https://www.npmjs.com/package/moment">Moment</a> for managing dates:</p>
-
-<pre><code class="sh">$ npm install moment@2.15.2 --save
-</code></pre>
-
-<p>Before moving on, let&rsquo;s write a quick unit test. Add the following code to a new file called <em>auth.local.test.js</em> in &ldquo;test/unit&rdquo;:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-
-const localAuth = require('../../src/server/auth/local');
-
-describe('auth : local', () =&gt; {
-
-});
-</code></pre>
-
-<p>Now add a test to the <code>describe</code> block:</p>
-
-<pre><code class="javascript">describe('encodeToken()', () =&gt; {
-  it('should return a token', (done) =&gt; {
-    const results = localAuth.encodeToken({id: 1});
-    should.exist(results);
-    results.should.be.a('string');
-    done();
-  });
-});
-</code></pre>
-
-<p>Run the tests. They should pass.</p>
-
-<h3>Decode Token</h3>
-
-<p>To decode a token, add the following code to <em>src/server/auth/local.js</em>:</p>
-
-<pre><code class="javascript">function decodeToken(token, callback) {
-  const payload = jwt.decode(token, process.env.TOKEN_SECRET);
-  const now = moment().unix();
-  // check if the token has expired
-  if (now &gt; payload.exp) callback('Token has expired.');
-  else callback(null, payload);
-}
-</code></pre>
-
-<p>Export the function:</p>
-
-<pre><code class="javascript">module.exports = {
-  encodeToken,
-  decodeToken
-};
-</code></pre>
-
-<p>Then add a test:</p>
-
-<pre><code class="javascript">describe('decodeToken()', () =&gt; {
-  it('should return a payload', (done) =&gt; {
-    const token = localAuth.encodeToken({id: 1});
-    should.exist(token);
-    token.should.be.a('string');
-    localAuth.decodeToken(token, (err, res) =&gt; {
-      should.not.exist(err);
-      res.sub.should.eql(1);
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Make sure the tests pass before moving on.</p>
-
-<h2>Route Setup</h2>
-
-<p>Now we can configure our routes using a test-first approach:</p>
-
-<ul>
-<li>/auth/register</li>
-<li>/auth/login</li>
-<li>/auth/logout</li>
-<li>/auth/user</li>
-</ul>
-
-
-<p>Add the following code to a new file called <em>routes.auth.test.js</em> in &ldquo;test/integration&rdquo;:</p>
-
-<pre><code class="javascript">process.env.NODE_ENV = 'test';
-
-const chai = require('chai');
-const should = chai.should();
-const chaiHttp = require('chai-http');
-chai.use(chaiHttp);
-
-const server = require('../../src/server/app');
-const knex = require('../../src/server/db/connection');
-
-describe('routes : auth', () =&gt; {
-
-  beforeEach(() =&gt; {
-    return knex.migrate.rollback()
-    .then(() =&gt; { return knex.migrate.latest(); });
-  });
-
-  afterEach(() =&gt; {
-    return knex.migrate.rollback();
-  });
-
-});
-</code></pre>
-
-<p>This is a common boilerplate for integration tests with <a href="http://chaijs.com/">Chai</a> assertions and <a href="https://github.com/chaijs/chai-http">Chai HTTP</a> for simulating client requests. For more info, check out <a href="http://mherman.org/blog/2016/04/28/test-driven-development-with-node/#.V-U1PZMrJE4">Test Driven Development With Node, Postgres, and Knex (Red/Green/Refactor)</a>.</p>
-
-<h3>Register</h3>
-
-<p>Start with a test:</p>
-
-<pre><code class="javascript">describe('POST /auth/register', () =&gt; {
-  it('should register a new user', (done) =&gt; {
-    chai.request(server)
-    .post('/auth/register')
-    .send({
-      username: 'michael',
-      password: 'herman'
-    })
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.should.include.keys('status', 'token');
-      res.body.status.should.eql('success');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Run the tests. You should see the following error:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Not Found] to not exist
-</code></pre>
-
-<p>Now let’s write the code to get the test to pass. First, register the new set of auth routes in <em>route-config.js</em>:</p>
-
-<pre><code class="javascript">(function (routeConfig) {
-
-  'use strict';
-
-  routeConfig.init = function (app) {
-
-    // *** routes *** //
-    const routes = require('../routes/index');
-    const authRoutes = require('../routes/auth');
-
-    // *** register routes *** //
-    app.use('/', routes);
-    app.use('/auth', authRoutes);
-
-  };
-
-})(module.exports);
-</code></pre>
-
-<p>Then add a new file to the &ldquo;route&rdquo; folder called auth.js:</p>
-
-<pre><code class="javascript">const express = require('express');
-const router = express.Router();
-
-const localAuth = require('../auth/local');
-const authHelpers = require('../auth/_helpers');
-
-router.post('/register', (req, res, next)  =&gt; {
-  return authHelpers.createUser(req)
-  .then((user) =&gt; { return localAuth.encodeToken(user[0]); })
-  .then((token) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      token: token
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error'
-    });
-  });
-});
-
-module.exports = router;
-</code></pre>
-
-<p>This route simply handles the creation of a new user. To finish, add a <code>createUser()</code> function to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">const bcrypt = require('bcryptjs');
-const knex = require('../db/connection');
-
-function createUser(req) {
-  const salt = bcrypt.genSaltSync();
-  const hash = bcrypt.hashSync(req.body.password, salt);
-  return knex('users')
-  .insert({
-    username: req.body.username,
-    password: hash
-  })
-  .returning('*');
-}
-
-module.exports = {
-  createUser
-};
-</code></pre>
-
-<p>Since you should <em>never</em> store plain text passwords, install <a href="https://www.npmjs.com/package/bcryptjs">bcrypt.js</a> for salting and hashing:</p>
-
-<pre><code class="sh">$ npm install bcryptjs@2.3.0 --save
-</code></pre>
-
-<p>Run the tests to ensure they still pass.</p>
-
-<h3>Login</h3>
-
-<p>This time, let’s look at how to handle both a success and an error&hellip;</p>
-
-<h4>Handle Success</h4>
-
-<p>Again, start with a test:</p>
-
-<pre><code class="javascript">describe('POST /auth/login', () =&gt; {
-  it('should login a user', (done) =&gt; {
-    chai.request(server)
-    .post('/auth/login')
-    .send({
-      username: 'jeremy',
-      password: 'johnson123'
-    })
-    .end((err, res) =&gt; {
-      should.not.exist(err);
-      res.redirects.length.should.eql(0);
-      res.status.should.eql(200);
-      res.type.should.eql('application/json');
-      res.body.should.include.keys('status', 'token');
-      res.body.status.should.eql('success');
-      should.exist(res.body.token);
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>You should see the following failure after running the tests:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Not Found] to not exist
-</code></pre>
-
-<p>Now, update the code. Start by adding the route handler to <em>src/server/routes/auth.js</em>:</p>
-
-<pre><code class="javascript">router.post('/login', (req, res, next) =&gt; {
-  const username = req.body.username;
-  const password = req.body.password;
-  return authHelpers.getUser(username)
-  .then((response) =&gt; {
-    authHelpers.comparePass(password, response.password);
-    return response;
-  })
-  .then((response) =&gt; { return localAuth.encodeToken(response); })
-  .then((token) =&gt; {
-    res.status(200).json({
-      status: 'success',
-      token: token
-    });
-  })
-  .catch((err) =&gt; {
-    res.status(500).json({
-      status: 'error'
-    });
-  });
-});
-</code></pre>
-
-<p>Then add the <code>getUser()</code> and <code>comparePass()</code> functions to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">function getUser(username) {
-  return knex('users').where({username}).first();
-}
-
-function comparePass(userPassword, databasePassword) {
-  const bool = bcrypt.compareSync(userPassword, databasePassword);
-  if (!bool) throw new Error('bad pass silly money');
-  else return true;
-}
-</code></pre>
-
-<p>Make sure to export the functions:</p>
-
-<pre><code class="javascript">module.exports = {
-  createUser,
-  getUser,
-  comparePass
-};
-</code></pre>
-
-<p>Run the tests. You should see:</p>
-
-<pre><code class="sh">Uncaught AssertionError: expected [Error: Internal Server Error] to not exist
-</code></pre>
-
-<p>Why? The user does not exist in the database. To fix this, we just need to seed the database before the tests are ran. Create a new seed file:</p>
-
-<pre><code class="sh">$ knex seed:make users
-</code></pre>
-
-<p>Then add the following code to the newly created seed file in <em>src/server/db/seeds/users.js</em>:</p>
-
-<pre><code class="javascript">const bcrypt = require('bcryptjs');
-
-exports.seed = (knex, Promise) =&gt; {
-  return knex('users').del()
-  .then(() =&gt; {
-    const salt = bcrypt.genSaltSync();
-    const hash = bcrypt.hashSync('johnson123', salt);
-    return Promise.join(
-      knex('users').insert({
-        username: 'jeremy',
-        password: hash
-      })
-    );
-  });
-};
-</code></pre>
-
-<p>Back in the test file, update the <code>beforeEach()</code>:</p>
-
-<pre><code class="javascript">beforeEach(() =&gt; {
-  return knex.migrate.rollback()
-  .then(() =&gt; { return knex.migrate.latest(); })
-  .then(() =&gt; { return knex.seed.run(); });
-});
-</code></pre>
-
-<p>Run the tests again. They should pass.</p>
-
-<blockquote><p><strong>NOTE:</strong> We did not write any unit tests to cover the <code>comparePass()</code> function. Do this on your own. Think about what needs to be covered. What if the user does not exist? What if the password is incorrect? Compare your tests to the tests I wrote in the <a href="https://github.com/mjhea0/node-token-auth">repo</a>.</p></blockquote>
-
-<h4>Handle Error</h4>
-
-<p>Add another <code>it</code> block to the previous test:</p>
-
-<pre><code class="javascript">it('should not login an unregistered user', (done) =&gt; {
-  chai.request(server)
-  .post('/auth/login')
-  .send({
-    username: 'michael',
-    password: 'johnson123'
-  })
-  .end((err, res) =&gt; {
-    should.exist(err);
-    res.status.should.eql(500);
-    res.type.should.eql('application/json');
-    res.body.status.should.eql('error');
-    done();
-  });
-});
-</code></pre>
-
-<p>The tests should still pass. What other errors should we handle? Think about this for a moment. How would you handle an expired token? Start with a test! Once done, move on&hellip;</p>
-
-<h3>User</h3>
-
-<p>Once logged in, users should have access to the <code>/user</code> endpoint. Start with the tests:</p>
-
-<pre><code class="javascript">describe('GET /auth/user', () =&gt; {
-  it('should return a success', (done) =&gt; {
-    chai.request(server)
-    .post('/auth/login')
-    .send({
-      username: 'jeremy',
-      password: 'johnson123'
-    })
-    .end((error, response) =&gt; {
-      should.not.exist(error);
-      chai.request(server)
-      .get('/auth/user')
-      .set('authorization', 'Bearer ' + response.body.token)
-      .end((err, res) =&gt; {
-        should.not.exist(err);
-        res.status.should.eql(200);
-        res.type.should.eql('application/json');
-        res.body.status.should.eql('success');
-        done();
-      });
-    });
-  });
-  it('should throw an error if a user is not logged in', (done) =&gt; {
-    chai.request(server)
-    .get('/auth/user')
-    .end((err, res) =&gt; {
-      should.exist(err);
-      res.status.should.eql(400);
-      res.type.should.eql('application/json');
-      res.body.status.should.eql('Please log in');
-      done();
-    });
-  });
-});
-</code></pre>
-
-<p>Run the tests, and then add the route handler:</p>
-
-<pre><code class="javascript">router.get('/user',
-  authHelpers.ensureAuthenticated,
-  (req, res, next)  =&gt; {
-  res.status(200).json({
-    status: 'success',
-  });
-});
-</code></pre>
-
-<p>Add a <code>ensureAuthenticated()</code> function to <em>src/server/auth/_helpers.js</em>:</p>
-
-<pre><code class="javascript">function ensureAuthenticated(req, res, next) {
-  if (!(req.headers &amp;&amp; req.headers.authorization)) {
-    return res.status(400).json({
-      status: 'Please log in'
-    });
-  }
-  // decode the token
-  var header = req.headers.authorization.split(' ');
-  var token = header[1];
-  localAuth.decodeToken(token, (err, payload) =&gt; {
-    if (err) {
-      return res.status(401).json({
-        status: 'Token has expired'
-      });
-    } else {
-      // check if the user still exists in the db
-      return knex('users').where({id: parseInt(payload.sub)}).first()
-      .then((user) =&gt; {
-        next();
-      })
-      .catch((err) =&gt; {
-        res.status(500).json({
-          status: 'error'
-        });
-      });
-    }
-  });
-}
-</code></pre>
-
-<p>Add the dependency:</p>
-
-<pre><code class="javascript">const localAuth = require('./local');
-</code></pre>
-
-<p>And export the function:</p>
-
-<pre><code class="javascript">module.exports = {
-  createUser,
-  getUser,
-  comparePass,
-  ensureAuthenticated
-};
-</code></pre>
-
-<p>Run the tests. All should pass.</p>
-
-<h2>Conclusion</h2>
-
-<p>In this tutorial, we went through the process of adding authentication to a NodeJS app with JSON Web Tokens. Turn back to the objectives. Can you put each one into action? What did you learn?</p>
-
-<p>What&rsquo;s next? Try adding:</p>
-
-<ol>
-<li>Authorization</li>
-<li>Logout (make sure to <a href="http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens">invalidate</a> the token)</li>
-<li>Two factor authentication</li>
-</ol>
-
-
-<p>Next time, we will incorporate the client to show the full auth process:</p>
-
-<ol>
-<li>Client logs in and the credentials are sent to the server</li>
-<li>Server generates a token (if the credentials are correct)</li>
-<li>Client receives and stores the token</li>
-<li>Client then sends token to server on subsequent requests</li>
-</ol>
-
-
-<p><em>New post is up, showing the client-side workflow: <a href="http://mherman.org/blog/2017/01/05/token-based-authentication-with-angular">Token-Based Authentication With Angular</a>!</em></p>
-
-<p>Feel free to share your comments, questions, or tips in the comments below. The full code can be found in the <a href="https://github.com/mjhea0/node-token-auth">node-token-auth</a> repository. Cheers!</p>
-
-<blockquote><p>Check out the <a href="https://news.ycombinator.com/item?id=13301105">HN Discussion</a> as well!</p></blockquote>
-
-<p>Did you enjoy this post? Please share. Sharing is caring.</p>
 ]]></content>
   </entry>
   

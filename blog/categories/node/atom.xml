@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-04-27T09:40:22-06:00</updated>
+  <updated>2017-05-11T14:40:16-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -12,6 +12,893 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Developing Microservices - Node, React, and Docker]]></title>
+    <link href="http://mherman.org/blog/2017/05/11/developing-microservices-node/"/>
+    <updated>2017-05-11T08:16:46-06:00</updated>
+    <id>http://mherman.org/blog/2017/05/11/developing-microservices-node</id>
+    <content type="html"><![CDATA[<p>In this post you will learn how to quickly spin up a reproducible development environment with Docker to manage a number of Node.js microservices.</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/docker-microservices.png" style="max-width: 100%; border:0; box-shadow: none;" alt="microservice architecture">
+</div>
+
+
+<p><br></p>
+
+<p>This post assumes prior knowledge of the following topics. Refer to the resources for more info:</p>
+
+<table>
+<thead>
+<tr>
+<th> Topic            </th>
+<th> Resource </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> Docker           </td>
+<td> <a href="https://docs.docker.com/engine/getstarted/">Get started with Docker</a> </td>
+</tr>
+<tr>
+<td> Docker Compose   </td>
+<td> <a href="https://docs.docker.com/compose/gettingstarted/">Get started with Docker Compose</a> </td>
+</tr>
+<tr>
+<td> Node/Express API </td>
+<td> <a href="http://mherman.org/blog/2016/09/12/testing-node-and-express">Testing Node and Express</a> </td>
+</tr>
+<tr>
+<td> React </td>
+<td> <a href="https://github.com/mjhea0/node-workshop/blob/master/w2/lessons/03-react.md">React Intro</a></td>
+</tr>
+<tr>
+<td> TestCafe </td>
+<td> <a href="http://mherman.org/blog/2017/03/19/functional-testing-with-testcafe">Functional Testing With TestCafe</a></td>
+</tr>
+<tr>
+<td> Swagger </td>
+<td> <a href="http://mherman.org/blog/2016/05/26/swagger-and-nodejs/">Swagger and NodeJS</a></td>
+</tr>
+</tbody>
+</table>
+
+
+<blockquote><p><strong>NOTE</strong>: Looking for a slightly easier implementation? Check out my previous post - <a href="http://mherman.org/blog/2017/04/18/developing-and-testing-microservices-with-docker">Developing and Testing Microservices With Docker</a>.</p></blockquote>
+
+<h2>Contents</h2>
+
+<ol>
+<li>Objectives</li>
+<li>Architecture</li>
+<li>Project Setup</li>
+<li>Users Service</li>
+<li>Web Service - part 1</li>
+<li>Movies Service</li>
+<li>Web Service - part 2</li>
+<li>Workflow</li>
+<li>Test Setup</li>
+<li>Swagger Setup</li>
+<li>Next Steps</li>
+</ol>
+
+
+<h2>Objectives</h2>
+
+<p>By the end of this tutorial, you should be able to&hellip;</p>
+
+<ol>
+<li>Configure and run microservices locally with Docker and Docker Compose</li>
+<li>Utilize <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">volumes</a> to mount your code into a container</li>
+<li>Run unit and integration tests inside a Docker container</li>
+<li>Test the entire set of services with functional, end-to-end tests</li>
+<li>Debug a running Docker container</li>
+<li>Enable services running in different containers to talk to one other</li>
+<li>Secure your services via JWT-based authentication</li>
+<li>Work with React running inside a Docker Container</li>
+<li>Configure Swagger to interact with a service</li>
+</ol>
+
+
+<h2>Architecture</h2>
+
+<p>The end goal of this post is to organize the technologies from the above image into the following containers and services:</p>
+
+<table>
+<thead>
+<tr>
+<th> Name             </th>
+<th> Service </th>
+<th> Container </th>
+<th> Tech                 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> Web              </td>
+<td> Web     </td>
+<td> web       </td>
+<td> React, React-Router  </td>
+</tr>
+<tr>
+<td> Movies API       </td>
+<td> Movies  </td>
+<td> movies    </td>
+<td> Node, Express        </td>
+</tr>
+<tr>
+<td> Movies DB        </td>
+<td> Movies  </td>
+<td> movies-db </td>
+<td> Postgres             </td>
+</tr>
+<tr>
+<td> Swagger          </td>
+<td> Movies  </td>
+<td> swagger   </td>
+<td> Swagger UI           </td>
+</tr>
+<tr>
+<td> Users API        </td>
+<td> Users   </td>
+<td> users     </td>
+<td> Node, Express        </td>
+</tr>
+<tr>
+<td> Users DB         </td>
+<td> Users   </td>
+<td> users-db  </td>
+<td> Postgres             </td>
+</tr>
+<tr>
+<td> Functional Tests </td>
+<td> Test    </td>
+<td> n/a       </td>
+<td> TestCafe             </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>Let&rsquo;s get started!</p>
+
+<h2>Project Setup</h2>
+
+<p>Start by cloning the base project and then checking out the first tag:</p>
+
+<pre><code class="sh">$ git clone https://github.com/mjhea0/microservice-movies
+$ cd microservice-movies
+$ git checkout tags/v1
+</code></pre>
+
+<p>Overall project structure:</p>
+
+<pre><code class="sh">.
+├── services
+│   ├── movies
+│   │   ├── src
+│   │   │   └── db
+│   │   └── swagger
+│   ├── users
+│   │   └── src
+│   │       └── db
+│   └── web
+└── tests
+</code></pre>
+
+<p>Before we add Docker, be sure to review the code so that you have a basic understanding of how everything works. Feel free to test these services as well&hellip;</p>
+
+<p><em>Users:</em></p>
+
+<ul>
+<li>Navigate to &ldquo;services/users&rdquo;</li>
+<li><code>npm install</code></li>
+<li><code>npm start</code></li>
+<li>Open <a href="http://localhost:3000/users/ping">http://localhost:3000/users/ping</a> in your browser</li>
+</ul>
+
+
+<p><em>Movies:</em></p>
+
+<ul>
+<li>Navigate to &ldquo;services/movies&rdquo;</li>
+<li><code>npm install</code></li>
+<li><code>npm start</code></li>
+<li>Open <a href="http://localhost:3001/movies/ping">http://localhost:3001/movies/ping</a> in your browser</li>
+</ul>
+
+
+<p><em>Web:</em></p>
+
+<ul>
+<li>Navigate to &ldquo;services/web&rdquo;</li>
+<li><code>npm install</code></li>
+<li><code>npm start</code></li>
+<li>Open <a href="http://localhost:3006">http://localhost:3006</a> in your browser. You should see the log in page.</li>
+</ul>
+
+
+<p>Next, add a <em>docker-compose.yml</em> file to the project root. This file is used by Docker Compose to link multiple services together. With one command it will spin up all the containers we need and enable them to communicate with one another (as needed).</p>
+
+<p>With that, let&rsquo;s get each service going, making sure to test as we go&hellip;</p>
+
+<h2>Users Service</h2>
+
+<p>We&rsquo;ll start with the database since the API is dependent on it being up&hellip;</p>
+
+<h3>Database</h3>
+
+<p>First, add a <em>Dockerfile</em> to &ldquo;services/users/src/db&rdquo;:</p>
+
+<pre><code>FROM postgres
+
+# run create.sql on init
+ADD create.sql /docker-entrypoint-initdb.d
+</code></pre>
+
+<p>Here, we extend the official Postgres image by adding a SQL file to the &ldquo;docker-entrypoint-initdb.d&rdquo; directory in the container, which will execute on init.</p>
+
+<p>Then update the <em>docker-compose.yml</em> file:</p>
+
+<pre><code>version: '2.1'
+
+services:
+
+  users-db:
+    container_name: users-db
+    build: ./services/users/src/db
+    ports:
+      - '5433:5432' # expose ports - HOST:CONTAINER
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: exit 0
+</code></pre>
+
+<p>This config will create a container called <code>users-db</code>, from the <em>Dockerfile</em> found in &ldquo;services/users/src/db&rdquo;. (Directories are relative to the <em>docker-compose.yml</em> file.)</p>
+
+<p>Once spun up, environment variables will be added and an exit code of <code>0</code> will be sent after it&rsquo;s successfully up and running. Postgres will be available on port <code>5433</code> on the host machine and on port <code>5432</code> for other services.</p>
+
+<blockquote><p><strong>NOTE:</strong> Use <code>expose</code>, rather than <code>ports</code>, if you just want Postgres available to other services but not the host machine:</p>
+
+<pre><code>expose:
+  - "5432"
+</code></pre></blockquote>
+
+<p>Take note of the version used - <code>2.1</code>. This does not relate directly to the version of Docker Compose installed; instead, it specifies the file format that you want to use.</p>
+
+<p>Fire up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d users-db
+</code></pre>
+
+<p>Once up, let&rsquo;s run a quick sanity check. Enter the shell:</p>
+
+<pre><code class="sh">$ docker-compose run users-db bash
+</code></pre>
+
+<p>Then run <code>env</code> to ensure that the proper environment variables are set. You can also check out the &ldquo;docker-entrypoint-initdb.d&rdquo; directory:</p>
+
+<pre><code class="sh"># cd docker-entrypoint-initdb.d/
+# ls
+create.sql
+</code></pre>
+
+<p><code>exit</code> when done.</p>
+
+<h3>API</h3>
+
+<p>Turning to the API, add a <em>Dockerfile</em> to &ldquo;services/users&rdquo;, making sure to review the comments:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /usr/src/app
+WORKDIR /usr/src
+
+# add `/usr/src/node_modules/.bin` to $PATH
+ENV PATH /usr/src/node_modules/.bin:$PATH
+
+# install and cache app dependencies
+ADD package.json /usr/src/package.json
+RUN npm install
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<blockquote><p><strong>NOTE</strong>: Be sure to take advantage of Docker&rsquo;s layered <a href="https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#build-cache">cache</a> system, to speed up build times, by adding the <em>package.json</em> and installing the dependencies <strong>before</strong> adding the app&rsquo;s source files. For more on this, check out <a href="http://bitjudo.com/blog/2014/03/13/building-efficient-dockerfiles-node-dot-js/">Building Efficient Dockerfiles - Node.js</a>.</p></blockquote>
+
+<p>Then add the <code>users-service</code> to the <em>docker-compose.yml</em> file:</p>
+
+<pre><code>users-service:
+  container_name: users-service
+  build: ./services/users/
+  volumes:
+    - './services/users:/usr/src/app'
+    - './services/users/package.json:/usr/src/package.json'
+  ports:
+    - '3000:3000' # expose ports - HOST:CONTAINER
+  environment:
+    - DATABASE_URL=postgres://postgres:postgres@users-db:5432/users_dev
+    - DATABASE_TEST_URL=postgres://postgres:postgres@users-db:5432/users_test
+    - NODE_ENV=${NODE_ENV}
+    - TOKEN_SECRET=changeme
+  depends_on:
+    users-db:
+      condition: service_healthy
+  links:
+    - users-db
+</code></pre>
+
+<p>What&rsquo;s happening here?</p>
+
+<ul>
+<li><code>volumes</code>: <a href="https://docs.docker.com/engine/tutorials/dockervolumes/">volumes</a> are used to mount a directory inside a container so that you can make modifications to the code without having to rebuild the image. This should be a default in your local development environment so you quickly get feedback on code changes.</li>
+<li><code>depends_on</code>: <a href="https://docs.docker.com/compose/compose-file/#dependson">depends_on</a> specifies the order in which to start services. In this case, the <code>users-service</code> will wait for the <code>users-db</code> to fire up successfully (with an exit code of <code>0</code>) before it starts.</li>
+<li><code>links</code>: With <a href="https://docs.docker.com/compose/compose-file/#links">links</a> you can link to services running in other containers. So, with this config, code inside the <code>users-service</code> will be able to access the database via <code>users-db:5432</code>.</li>
+</ul>
+
+
+<blockquote><p><strong>NOTE:</strong> Curious about the difference between <code>depends_on</code> and <code>links</code>? Check out the following <a href="http://stackoverflow.com/a/39658359/1799408">Stack Overflow discussion</a> for more info.</p></blockquote>
+
+<p>Set the <code>NODE_ENV</code> environment variable:</p>
+
+<pre><code class="sh">$ export NODE_ENV=development
+</code></pre>
+
+<p>Build the image and spin up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d users-service
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> Keep in mind that Docker Compose handles both the build and run times. This can be confusing. For example, take a look at the current docker-compose.yml file - What is happening at the build time? How about the run time? How do you know?</p></blockquote>
+
+<p>Once up, create a new file in the project root called <em>init_db.sh</em> and add the Knex migrate and seed commands:</p>
+
+<pre><code class="sh">#!/bin/sh
+
+docker-compose run users-service knex migrate:latest --env development --knexfile app/knexfile.js
+docker-compose run users-service knex seed:run --env development --knexfile app/knexfile.js
+</code></pre>
+
+<p>Then apply the migrations and add the seed:</p>
+
+<pre><code class="sh">$ sh init_db.sh
+Using environment: development
+Batch 1 run: 1 migrations
+/src/src/db/migrations/20170504191016_users.js
+Using environment: development
+Ran 1 seed files
+/src/src/db/seeds/users.js
+</code></pre>
+
+<p>Test:</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint        </th>
+<th> HTTP Method </th>
+<th> CRUD Method </th>
+<th> Result        </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> /users/ping     </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> <code>pong</code>        </td>
+</tr>
+<tr>
+<td> /users/register </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> add a user    </td>
+</tr>
+<tr>
+<td> /users/login    </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> log in a user </td>
+</tr>
+<tr>
+<td> /users/user     </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get user info </td>
+</tr>
+</tbody>
+</table>
+
+
+<pre><code class="sh">$ http POST http://localhost:3000/users/register username=foo password=bar
+$ http POST http://localhost:3000/users/login username=foo password=bar
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> <code>http</code> in the above commands is part of the <a href="https://httpie.org/">HTTPie</a> library, which is a wrapper on top of cURL.</p></blockquote>
+
+<p>In both cases you should see a <code>status</code> of <code>success</code> along with a <code>token</code>, i.e. -</p>
+
+<pre><code class="sh">{
+    "status": "success",
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+}
+</code></pre>
+
+<p>Finally, run the unit and integration tests:</p>
+
+<pre><code class="sh">$ docker-compose run users-service npm test
+</code></pre>
+
+<p>You should see:</p>
+
+<pre><code>routes : index
+  GET /does/not/exist
+    ✓ should throw an error
+
+routes : users
+  POST /users/register
+    ✓ should register a new user (178ms)
+  POST /users/login
+    ✓ should login a user (116ms)
+    ✓ should not login an unregistered user
+    ✓ should not login a valid user with incorrect password (125ms)
+  GET /users/user
+    ✓ should return a success (114ms)
+    ✓ should throw an error if a user is not logged in
+
+auth : helpers
+  comparePass()
+    ✓ should return true if the password is correct (354ms)
+    ✓ should return false if the password is correct (315ms)
+    ✓ should return false if the password empty (305ms)
+
+auth : local
+  encodeToken()
+    ✓ should return a token
+  decodeToken()
+    ✓ should return a payload
+
+
+12 passing (4s)
+</code></pre>
+
+<p>Check the test specs for more info. That&rsquo;s it! Let&rsquo;s move on to the web service&hellip;</p>
+
+<h2>Web Service - part 1</h2>
+
+<p>With our users service up and running, we can turn our attention to the client-side and spin up the React app inside a container to test authentication.</p>
+
+<blockquote><p><strong>NOTE:</strong> The React code is ported from <a href="https://github.com/blackstc/intro-react-redux-omdb">intro-react-redux-omdb</a> and <a href="https://github.com/etmoore/communikey">communikey</a> written by <a href="https://www.linkedin.com/in/charlieblackstock/">Charlie Blackstock</a> and <a href="https://www.linkedin.com/in/etmoore1/">Evan Moore</a>, respectively - two of my former students.</p></blockquote>
+
+<p>Add a <em>Dockerfile</em> to &ldquo;services/web&rdquo;:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /usr/src/app
+WORKDIR /usr/src/app
+
+# add `/usr/src/app/node_modules/.bin` to $PATH
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
+
+# install and cache app dependencies
+ADD package.json /usr/src/app/package.json
+RUN npm install
+RUN npm install react-scripts@0.9.5 -g
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<p>And update the <em>docker-compose.yml</em> file like so:</p>
+
+<pre><code>web-service:
+  container_name: web-service
+  build: ./services/web/
+  volumes:
+    - './services/web:/usr/src/app'
+    - '/usr/src/app/node_modules'
+  ports:
+    - '3007:3006' # expose ports - HOST:CONTAINER
+  environment:
+    - NODE_ENV=${NODE_ENV}
+  depends_on:
+    users-service:
+      condition: service_started
+  links:
+    - users-service
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> To prevent the volume - <code>/usr/src/app</code> - from overriding the <em>package.json</em>, we used a data volume - <code>/usr/src/app/node_modules</code>. This may or may not be necessary, depending on the order in which you set up your image and containers. Check out <a href="http://dchua.com/2016/02/07/getting-npm-packages-to-be-installed-with-docker-compose/">Getting npm packages to be installed with docker-compose</a> for more.</p></blockquote>
+
+<p>Build the image and fire up the container:</p>
+
+<pre><code class="sh">$ docker-compose up --build -d web-service
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> To avoid dealing with too much configuration (babel and webpack), the React app uses <a href="https://github.com/facebookincubator/create-react-app">Create React App</a>.</p></blockquote>
+
+<p>Open your browser and navigate to <a href="http://localhost:3007">http://localhost:3007</a>. You should see the login page:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/microservice-movies-login.png" style="max-width: 100%; border:0; box-shadow: none;" alt="login page">
+</div>
+
+
+<p>Log in with -</p>
+
+<ul>
+<li>username: <code>foo</code></li>
+<li>password: <code>bar</code></li>
+</ul>
+
+
+<p>Once logged in you should see:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/microservice-movies-search.png" style="max-width: 100%; border:0; box-shadow: none;" alt="search page">
+</div>
+
+
+<p>Within <em>services/web/src/App.jsx</em>, let&rsquo;s take a quick look at the AJAX request in the <code>loginUser()</code> method:</p>
+
+<pre><code class="javascript">loginUser (userData, callback) {
+  /*
+    why? http://localhost:3000/users/login
+    why not? http://users-service:3000/users/login
+   */
+  return axios.post('http://localhost:3000/users/login', userData)
+  .then((res) =&gt; {
+    window.localStorage.setItem('authToken', res.data.token)
+    window.localStorage.setItem('user', res.data.user)
+    this.setState({ isAuthenticated: true })
+    this.createFlashMessage('You successfully logged in! Welcome!')
+    this.props.history.push('/')
+    this.getMovies()
+  })
+  .catch((error) =&gt; {
+    callback('Something went wrong')
+  })
+}
+</code></pre>
+
+<p>Why do we use <code>localhost</code> rather than the name of the container, <code>users-service</code>? This request is originating outside the container, on the host. Keep in mind, that if, this request was originating inside the container, we would need to use the container name rather than <code>localhost</code>, since <code>localhost</code> would refer back to the container itself in that situation.</p>
+
+<p>Make sure you can log out and register as well.</p>
+
+<p>Next, let&rsquo;s spin up the movies service so that end users can save movies to a collection&hellip;</p>
+
+<h2>Movies Service</h2>
+
+<p>Set up for the movies service is nearly the same as the users service. Try this on your own to check your understanding:</p>
+
+<ol>
+<li>Database
+
+<ul>
+<li>add a <em>Dockerfile</em></li>
+<li>update the <em>docker-compose.yml</em></li>
+<li>spin up the container</li>
+<li>test</li>
+</ul>
+</li>
+<li>API
+
+<ul>
+<li>add a <em>Dockerfile</em></li>
+<li>update the <em>docker-compose.yml</em> (make sure to link the service with the database and the users service and update the exposed ports - <code>3001</code> for the api, <code>5434</code> for the db)</li>
+<li>spin up the container</li>
+<li>apply migrations and seeds</li>
+<li>test</li>
+</ul>
+</li>
+</ol>
+
+
+<blockquote><p><strong>NOTE:</strong> Need help? Grab the code from the <a href="https://github.com/mjhea0/microservice-movies">microservices-movies</a> repo.</p></blockquote>
+
+<p>The movies database image should take much less time to build than the users database. Why?</p>
+
+<p>With the containers up, let&rsquo;s test out the endpoints&hellip;</p>
+
+<table>
+<thead>
+<tr>
+<th> Endpoint      </th>
+<th> HTTP Method </th>
+<th> CRUD Method </th>
+<th> Result                    </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> /movies/ping  </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> <code>pong</code>                    </td>
+</tr>
+<tr>
+<td> /movies/user  </td>
+<td> GET         </td>
+<td> READ        </td>
+<td> get all movies by user    </td>
+</tr>
+<tr>
+<td> /movies       </td>
+<td> POST        </td>
+<td> CREATE      </td>
+<td> add a single movie        </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>Start with opening the browser to <a href="http://localhost:3001/movies/ping">http://localhost:3001/movies/ping</a>. You should see <code>pong</code>! Try <a href="http://localhost:3001/movies/user">http://localhost:3001/movies/user</a>:</p>
+
+<pre><code class="json">{
+  "status": "Please log in"
+}
+</code></pre>
+
+<p>Since you need to be authenticated to access the other routes, let&rsquo;s test them out by running the integration tests:</p>
+
+<pre><code class="sh">$ docker-compose run movies-service npm test
+</code></pre>
+
+<p>You should see:</p>
+
+<pre><code class="sh">routes : index
+  GET /does/not/exist
+    ✓ should throw an error
+
+Movies API Routes
+  GET /movies/ping
+    ✓ should return "pong"
+  GET /movies/user
+    ✓ should return saved movies
+  POST /movies
+    ✓ should create a new movie
+
+
+4 passing (818ms)
+</code></pre>
+
+<p>Check the test specs for more info.</p>
+
+<h2>Web Service - part 2</h2>
+
+<p>Turn to the <em>docker-compose.yml</em> file. Update the <code>links</code> and <code>depends_on</code> keys for the <code>web-service</code>:</p>
+
+<pre><code>depends_on:
+  users-service:
+    condition: service_started
+  movies-service:
+    condition: service_started
+links:
+  - users-service
+  - movies-service
+</code></pre>
+
+<p>Why?</p>
+
+<p>Next, update the container:</p>
+
+<pre><code class="sh">$ docker-compose up -d web-service
+</code></pre>
+
+<p>Let&rsquo;s test this out in the browser! Open <a href="http://localhost:3007/">http://localhost:3007/</a>. Register a new user and then add some movies to the collection.</p>
+
+<p>Be sure to view the collection as well:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/microservice-movies-collection.png" style="max-width: 100%; border:0; box-shadow: none;" alt="collection page">
+</div>
+
+
+<p>Open <em>services/movies/src/routes/_helpers.js</em> and take note of the <code>ensureAuthenticated()</code> method:</p>
+
+<pre><code class="javascript">let ensureAuthenticated = (req, res, next) =&gt; {
+  if (!(req.headers &amp;&amp; req.headers.authorization)) {
+    return res.status(400).json({ status: 'Please log in' });
+  }
+  const options = {
+    method: 'GET',
+    uri: 'http://users-service:3000/users/user',
+    json: true,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${req.headers.authorization.split(' ')[1]}`,
+    },
+  };
+  return request(options)
+  .then((response) =&gt; {
+    req.user = response.user;
+    return next();
+  })
+  .catch((err) =&gt; { return next(err); });
+};
+</code></pre>
+
+<p>Why does the uri point to <code>users-service</code> and not <code>localhost</code>?</p>
+
+<h2>Workflow</h2>
+
+<p>Start by checking out the <em>Workflow</em> section from <a href="http://mherman.org/blog/2017/04/18/developing-and-testing-microservices-with-docker/">Developing and Testing Microservices With Docker</a>. Experiment with live reloading on a code change and debugging a running container with <code>console.log</code>.</p>
+
+<p>Add a header to the collection page:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/microservice-movies-collection-updated.png" style="max-width: 100%; border:0; box-shadow: none;" alt="collection page with header">
+</div>
+
+
+<p>Run the logs - <code>docker-compose logs -f web-service</code> - and then make a change to one of the components that breaks compilation:</p>
+
+<pre><code class="sh">web-service       | Compiling...
+web-service       | Failed to compile.
+web-service       |
+web-service       | Error in ./src/components/SavedMovies.jsx
+web-service       |
+web-service       | /usr/src/app/src/components/SavedMovies.jsx
+web-service       |   10:13  error  'Link' is not defined  react/jsx-no-undef
+web-service       |
+web-service       | ✖ 1 problem (1 error, 0 warnings)
+web-service       |
+web-service       |
+</code></pre>
+
+<p>Correct the error:</p>
+
+<pre><code class="sh">web-service       |
+web-service       | Compiling...
+web-service       | Compiled successfully!
+</code></pre>
+
+<p>Continue to experiment with adding and updating the React app until you feel comfortable working with it inside the container.</p>
+
+<h2>Test Setup</h2>
+
+<p>Thus far we&rsquo;ve only tested each individual microservice with unit and integration tests. Let&rsquo;s turn our attention to functional, end-to-end tests to test the entire system. For this, we&rsquo;ll use <a href="https://testcafe.devexpress.com/">TestCafe</a>.</p>
+
+<blockquote><p><strong>NOTE:</strong> Don&rsquo;t want to use TestCafe? Check out the <a href="https://github.com/mjhea0/node-docker-api/tree/master/tests">code</a> for using Mocha, Chai, Request, and Cheerio (all within a container) for testing.</p></blockquote>
+
+<p>Let&rsquo;s be lazy and install TestCafe globally:</p>
+
+<pre><code class="sh">$ npm install testcafe@0.15.0 -g
+</code></pre>
+
+<p>Then run the tests:</p>
+
+<pre><code class="sh">$ testcafe firefox tests/**/*.js
+</code></pre>
+
+<p>You should see:</p>
+
+<pre><code class="sh">testcafe firefox tests/**/*.js
+ Running tests in:
+ - Firefox 53.0.0 / Mac OS X 10.11.0
+
+ /login
+ ✓ users should be able to log in and out
+
+
+ 1 passed (3s)
+</code></pre>
+
+<blockquote><p><strong>NOTE:</strong> Interested in running the tests from within a container? Check out the <a href="https://devexpress.github.io/testcafe/documentation/using-testcafe/installing-testcafe.html#using-testcafe-docker-image">official TestCafe docs</a> for more info on using TestCafe with Docker.</p></blockquote>
+
+<p>To simplify the test workflow, add a <em>test.sh</em> file to the project root:</p>
+
+<pre><code class="sh">#!/bin/sh
+
+fails=''
+
+function inspect() {
+  if [ $1 -ne 0 ] ; then
+    fails="${fails} $2"
+  fi
+}
+
+docker-compose run users-service npm test
+inspect $? users-service
+
+docker-compose run movies-service npm test
+inspect $? movies-service
+
+testcafe firefox tests/**/*.js
+inspect $? e2e
+
+if [[ -n "${fails}" ]];
+  then
+    echo "Tests failed: ${fails}"
+    exit 1
+  else
+    echo "Tests passed!"
+    exit 0
+fi
+</code></pre>
+
+<p>Run the tests:</p>
+
+<pre><code class="sh">$ sh test.sh
+</code></pre>
+
+<h2>Swagger Setup</h2>
+
+<p>Add a <em>Dockerfile</em> to &ldquo;services/movies/swagger&rdquo;:</p>
+
+<pre><code>FROM node:latest
+
+# set working directory
+RUN mkdir /usr/src/app
+WORKDIR /usr/src/app
+
+# add `/usr/src/node_modules/.bin` to $PATH
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
+
+# install and cache app dependencies
+ADD package.json /usr/src/app/package.json
+RUN npm install
+
+# start app
+CMD ["npm", "start"]
+</code></pre>
+
+<p>Update <em>docker-compose.yml</em>:</p>
+
+<pre><code>swagger:
+  container_name: swagger
+  build: ./services/movies/swagger/
+  volumes:
+    - './services/movies/swagger:/usr/src/app'
+    - '/usr/src/app/node_modules'
+  ports:
+    - '3003:3001' # expose ports - HOST:CONTAINER
+  environment:
+    - NODE_ENV=${NODE_ENV}
+  depends_on:
+    users-service:
+      condition: service_started
+    movies-service:
+      condition: service_started
+  links:
+    - users-service
+    - movies-service
+</code></pre>
+
+<p>Fire it up:</p>
+
+<pre><code class="sh">$ docker-compose up -d --build swagger
+</code></pre>
+
+<p>Navigate to <a href="http://localhost:3003/docs">http://localhost:3003/docs</a> and test it out:</p>
+
+<div style="text-align:center;">
+  <img src="http://mherman.org/images/blog/microservice-movies-swagger.png" style="max-width: 100%; border:0; box-shadow: none;" alt="swagger docs">
+</div>
+
+
+<p>Now you just need to incorporate support for JWT-based auth and add the remaining endpoints!</p>
+
+<h2>Next Steps</h2>
+
+<p>What&rsquo;s next?</p>
+
+<ol>
+<li><em>React App</em> - The React app could use some love. Add styles. Fix bugs. Update the flash messages so that only one is displayed at a time. Write tests. Build new features. Add Redux. The sky&rsquo;s the limit. Contact me if you&rsquo;d like to pair!</li>
+<li><em>Swagger</em> - Add JWT-based auth and add additional endpoints from the movies service.</li>
+<li><em>Dockerfiles</em> - Read <a href="https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/">Best practices for writing Dockerfiles</a>, by the Docker team, and refactor as necessary.</li>
+</ol>
+
+
+<p>Grab the final code from the <a href="https://github.com/mjhea0/microservice-movies">microservice-movies</a> repo. Please add questions and/or comments below. There’s slides too! Check them out <a href="http://mherman.org/microservice-movies">here</a>, if interested.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Flask for Node Developers]]></title>
@@ -633,6 +1520,8 @@ sqlite&gt; SELECT * FROM songs ORDER BY id desc;
 </table>
 
 
+<blockquote><p><strong>NOTE</strong>: Looking for a more advanced implementation with React? Check out my other post - <a href="ADD%20URL">Developing Microservices - Node, React, and Docker</a>.</p></blockquote>
+
 <h2>Contents</h2>
 
 <ol>
@@ -667,7 +1556,7 @@ sqlite&gt; SELECT * FROM songs ORDER BY id desc;
 
 <h2>Project Setup</h2>
 
-<p>Start by cloning the base project and the checking out the first tag:</p>
+<p>Start by cloning the base project and then checking out the first tag:</p>
 
 <pre><code class="sh">$ git clone https://github.com/mjhea0/node-docker-api
 $ cd node-docker-api
@@ -784,7 +1673,7 @@ $ git checkout tags/v1
 
 <blockquote><p><strong>NOTE:</strong> Why 2.1? <a href="https://docs.docker.com/compose/compose-file/compose-file-v2/#version-21">Answer</a>.</p></blockquote>
 
-<p>Then add a <em>.dockerignore</em> to the &ldquo;services/locations&rdquo;, &ldquo;"services/locations/src/db&rdquo;, &ldquo;services/users&rdquo;, &ldquo;"services/users/src/db&rdquo;, &ldquo;tests&rdquo;, and &ldquo;web&rdquo; directories:</p>
+<p>Then add a <em>.dockerignore</em> to the &ldquo;services/locations&rdquo;, &ldquo;services/locations/src/db&rdquo;, &ldquo;services/users&rdquo;, &ldquo;services/users/src/db&rdquo;, &ldquo;tests&rdquo;, and &ldquo;web&rdquo; directories:</p>
 
 <pre><code>.git
 .gitignore
@@ -1279,7 +2168,7 @@ $ docker-compose run tests npm test
 </ol>
 
 
-<p>Grab the final code from the <a href="https://github.com/mjhea0/node-docker-api">node-docker-api</a> repo. Comment below. Cheers</p>
+<p>Grab the final code from the <a href="https://github.com/mjhea0/node-docker-api">node-docker-api</a> repo. Comment below. Cheers!</p>
 ]]></content>
   </entry>
   
@@ -2869,657 +3758,6 @@ Ran all test suites.
 <p>It&rsquo;s plug-n-play with Babel, so adding Flow to a project using Babel would probably be much less painful than converting it to use TypeScript. Both allow you to do so bit by bit, but Flow handles this more gracefully. TypeScript would usually like to just have you pass everything through the compiler and deal with the type errors as you can. Flow allows you to annotate <em>only</em> the files you want to type check, so adding it to an existing project is much easier. Actually, this is probably the best use case for Flow. It would be cumbersome to start a brand new project with such strict type checking. It definitely slows down the rapid iteration needed at the beginning of a project&rsquo;s life. However, once the project gets to a certain size it&rsquo;s easy to drop in Flow and clean up the errors file by file as you move forward.</p>
 
 <p>You can grab the code from the <a href="https://github.com/mjhea0/flow-node-api">flow-node-api</a> repo. Best!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Developing a RESTful API With Node and TypeScript]]></title>
-    <link href="http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript/"/>
-    <updated>2016-11-05T07:38:56-06:00</updated>
-    <id>http://mherman.org/blog/2016/11/05/developing-a-restful-api-with-node-and-typescript</id>
-    <content type="html"><![CDATA[<p>This tutorial details how to develop a RESTful API with <a href="https://nodejs.org/en/">NodeJS</a>, <a href="http://expressjs.com/">ExpressJS</a>, and <a href="https://www.typescriptlang.org/">TypeScript</a> using test-driven development (TDD).</p>
-
-<p>We will be using:</p>
-
-<ul>
-<li>NodeJS v<a href="https://nodejs.org/docs/v7.0.0/api/all.html">7.0.0</a></li>
-<li>ExpressJS v<a href="http://expressjs.com/4x/api.html">4.14.0</a></li>
-<li>TypeScript v<a href="https://github.com/Microsoft/TypeScript/releases/tag/v2.0.6">2.0.6</a></li>
-</ul>
-
-
-<p>Additionally, we will use <em><a href="https://www.typescriptlang.org/docs/handbook/tsconfig-json.html">tsconfig.json</a></em> to configure the project, <a href="http://gulpjs.com/">Gulp</a> to automate <a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpilation</a>, and <a href="https://github.com/typings/typings">d.ts</a> for managing typings with <code>npm</code>.</p>
-
-<p>Updates:</p>
-
-<ul>
-<li>03/12/2017: Updated the <em>gulpfile.js</em> and <em>package.json</em></li>
-</ul>
-
-
-<h2>Contents</h2>
-
-<ol>
-<li>Project Setup</li>
-<li>Express Config</li>
-<li>The API</li>
-<li>First Endpoint</li>
-<li>Second Endpoint</li>
-<li>What&rsquo;s Next?</li>
-</ol>
-
-
-<h2>Project Setup</h2>
-
-<p>To start, we need to set a means to transpile TypeScript into JavaScript that works well with Node. Enter the <em>tsconfig.json</em> file. This is similar to a <em>package.json</em> or <em>.babelrc</em> or really any project-level configuration file you may use. As you can probably guess, it will configure the TypeScript compiler for the project.</p>
-
-<p>Make a new directory to hold the project, and add a <em>tsconfig.json</em> file:</p>
-
-<pre><code class="sh">$ mkdir typescript-node-api
-$ cd typescript-node-api
-$ touch tsconfig.json
-</code></pre>
-
-<p>We&rsquo;ll use a pretty basic configuration for today:</p>
-
-<pre><code class="json">{
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs"
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
-}
-</code></pre>
-
-<p>Here:</p>
-
-<ul>
-<li>in <code>compilerOptions</code> we tell TypeScript that we&rsquo;ll be targeting ES2015 and that we&rsquo;d like a <a href="https://en.wikipedia.org/wiki/CommonJS">CommonJS</a> style module as output (the same module style that Node uses)</li>
-<li>the <code>include</code> section tells the compiler to look for <em>.ts</em> files in the &ldquo;src&rdquo; directory</li>
-<li>the <code>exclude</code> section tells the compiler to ignore anything in &ldquo;node_modules&rdquo;</li>
-</ul>
-
-
-<blockquote><p><strong>NOTE:</strong> Review the <a href="http://www.typescriptlang.org/docs/handbook/tsconfig-json.html">TypeScript docs</a> if you want more info on all the options you can define in the <em>tsconfig.json</em> file,  They are the same options that you can pass directly to the <a href="https://www.npmjs.com/package/typescript-compiler">TypeScript compiler wrapper</a>.</p></blockquote>
-
-<p>Add a &ldquo;src&rdquo; directory:</p>
-
-<pre><code class="sh">$ mkdir src
-</code></pre>
-
-<p>Before moving any further, let&rsquo;s make sure this configuration works like we expect using the <a href="https://www.npmjs.com/package/typescript-compiler">TypeScript compiler wrapper</a>. Create a <em>package.json</em> and install TypeScript:</p>
-
-<pre><code class="sh">$ npm init -y
-$ npm install typescript@2.0.6 --save-dev
-</code></pre>
-
-<p>Create a new file called <em>test.ts</em> within the &ldquo;src&rdquo; directory and add the following:</p>
-
-<pre><code class="javascript">console.log('Hello, TypeScript!');
-</code></pre>
-
-<p>Finally, let&rsquo;s run this one-liner through the compiler. From the project root, run the <code>tsc</code> that we installed above in our test file with:</p>
-
-<pre><code class="sh">$ node_modules/.bin/tsc
-</code></pre>
-
-<p>Given no arguments, <code>tsc</code> will first look at <em>tsconfig.json</em> for instruction. When it finds the config, it uses those settings to build the project. You should see a new file inside of &ldquo;src&rdquo; called <em>test.js</em> with the same line of code in it. Awesome!</p>
-
-<p>Now that the compiler is installed and working, let&rsquo;s change up the config to make things easier on ourselves. First, we&rsquo;ll add an <code>outDir</code> property to the <code>compilerOptions</code> of <code>tsconfig.json</code> to tell TypeScript to place all of our transpiled JavaScript into a different directory rather than compiling the files right next to their source <em>.ts</em> files:</p>
-
-<pre><code class="json">{
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "outDir": "dist"
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
-}
-</code></pre>
-
-<p>Remove the <em>test.js</em> file from the &ldquo;src&rdquo; folder. Now, run the compiler again, and you&rsquo;ll see that <code>test.js</code> is delivered to the <code>dist</code> directory.</p>
-
-<p>This is much nicer, but let&rsquo;s take it one step further. Instead of returning to the terminal after each change and manually running the compiler each time let&rsquo;s automate the process with Gulp:</p>
-
-<pre><code class="sh">$ npm install gulp@3.9.1 gulp-typescript@3.1.1 --save-dev
-</code></pre>
-
-<blockquote><p><strong>NOTE:</strong> You&rsquo;ll also want to globally install <code>gulp</code> to trigger Gulp tasks easily from the command line: <code>npm install -g gulp@3.9.1</code></p></blockquote>
-
-<p>Add a <em>gulpfile.js</em> to the root of the directory. This is where we&rsquo;ll automate the compiling of our source files:</p>
-
-<ol>
-<li>Pull in the <em>tsconfig.json</em> and pass it to <code>gulp-typescript</code> for configuration</li>
-<li>Tell <code>gulp-typescript</code> to transpile our project and deliver it to &ldquo;dist&rdquo;</li>
-<li>Tell Gulp to watch our source <em>.ts</em> files, so that our transpiled JavaScript automatically gets rebuilt upon file changes</li>
-</ol>
-
-
-<p>Add the code:</p>
-
-<pre><code class="javascript">const gulp = require('gulp');
-const ts = require('gulp-typescript');
-const JSON_FILES = ['src/*.json', 'src/**/*.json'];
-
-// pull in the project TypeScript config
-const tsProject = ts.createProject('tsconfig.json');
-
-gulp.task('scripts', () =&gt; {
-  const tsResult = tsProject.src()
-  .pipe(tsProject());
-  return tsResult.js.pipe(gulp.dest('dist'));
-});
-
-gulp.task('watch', ['scripts'], () =&gt; {
-  gulp.watch('src/**/*.ts', ['scripts']);
-});
-
-gulp.task('assets', function() {
-  return gulp.src(JSON_FILES)
-  .pipe(gulp.dest('dist'));
-});
-
-gulp.task('default', ['watch', 'assets']);
-</code></pre>
-
-<p>To test this out, remove <em>dist/test.js</em> and run <code>gulp</code> from the project root. You&rsquo;ll see Gulp start up, and <em>test.js</em> should be compiled again and placed into &ldquo;dist&rdquo;. Awesome! Our project is now configured.</p>
-
-<p>Let&rsquo;s move on to working with Express&hellip;</p>
-
-<h2>Express Config</h2>
-
-<p>For our Express server, we&rsquo;ll use the <a href="https://github.com/expressjs/generator">express-generator</a> as our template. We&rsquo;ll start with what would be the &ldquo;bin/www&rdquo; file and create an HTTP server, initialize it, and then attach our Express app to it.</p>
-
-<p>Install Express along with <a href="https://github.com/visionmedia/debug">debug</a> (to provide some nice terminal output while developing):</p>
-
-<pre><code class="sh">$ npm install express@4.14.0 debug@2.2.0 --save
-</code></pre>
-
-<p>In TypeScript, when you install third-party packages, you should also pull down the package&rsquo;s type definitions. This tells the compiler about the structure of the module that you&rsquo;re using, giving it the information needed to properly evaluate the types of structures that you use from the module.</p>
-
-<p>Before TypeScript 2.0, dealing with <em>.d.ts</em> (type definition) files could be a real nightmare. The language had a built in tool, <code>tsd</code>, but it was a bear to work with and you had to decorate your TypeScript files with triple-slash comments to pull declarations into your file. Then <a href="https://github.com/typings/typings">typings</a> came along and things were much better, but there were still some issues and now you had another separate package manager to manage in your project.</p>
-
-<p>With TypeScript 2.0, TypeScript definitions are managed by <code>npm</code> and installed as <a href="https://docs.npmjs.com/misc/scope">scoped packages</a>. This means two things for you:</p>
-
-<ol>
-<li>Dependency management is simplified</li>
-<li>To install a <a href="https://www.npmjs.com/~types">type module</a>, prefix its name with <code>@types/</code></li>
-</ol>
-
-
-<p>Install the type definitions for Node, Express, and debug:</p>
-
-<pre><code class="sh">$ npm install @types/node@6.0.46 @types/express@4.0.33 @types/debug@0.0.29 --save-dev
-</code></pre>
-
-<p>With that, we&rsquo;re ready to create the HTTP server. Rename <em>src/test.ts</em> to <em>src/index.ts</em>, remove the console log, and add the following:</p>
-
-<pre><code class="javascript">import * as http from 'http';
-import * as debug from 'debug';
-
-import App from './App';
-
-debug('ts-express:server');
-
-const port = normalizePort(process.env.PORT || 3000);
-App.set('port', port);
-
-const server = http.createServer(App);
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-function normalizePort(val: number|string): number|string|boolean {
-  let port: number = (typeof val === 'string') ? parseInt(val, 10) : val;
-  if (isNaN(port)) return val;
-  else if (port &gt;= 0) return port;
-  else return false;
-}
-
-function onError(error: NodeJS.ErrnoException): void {
-  if (error.syscall !== 'listen') throw error;
-  let bind = (typeof port === 'string') ? 'Pipe ' + port : 'Port ' + port;
-  switch(error.code) {
-    case 'EACCES':
-      console.error(`${bind} requires elevated privileges`);
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(`${bind} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-function onListening(): void {
-  let addr = server.address();
-  let bind = (typeof addr === 'string') ? `pipe ${addr}` : `port ${addr.port}`;
-  debug(`Listening on ${bind}`);
-}
-</code></pre>
-
-<p>If you&rsquo;re using an editor with rich TypeScript <a href="https://atom.io/packages/atom-typescript">support</a>, it&rsquo;s not going to appreciate <code>import App from './App';</code>, but just ignore it for now. The rest of this file is pretty straightforward:</p>
-
-<ol>
-<li>Use <code>debug</code> to set up some terminal logging for the app</li>
-<li>Get a port value from the environment, or set a default port number of 3000</li>
-<li>Create the HTTP server, and pass <code>App</code> to it (this will be our Express app)</li>
-<li>Set up some basic error handling and a terminal log to show us when the app is ready and listening</li>
-</ol>
-
-
-<p>Since this file will start the app, let&rsquo;s also add a <code>"start"</code> script to <code>package.json</code> for convenience:</p>
-
-<pre><code class="json">"scripts": {
-  "start": "node dist/index.js"
-},
-</code></pre>
-
-<p>Before we can start the app up, let&rsquo;s make the <em>App.ts</em> file that we referenced on in <em>index.ts</em>. It&rsquo;s also a good time to go ahead and install the dependencies we&rsquo;ll use in the Express application.</p>
-
-<pre><code class="sh">$ touch src/App.ts
-$ npm install express@4.14.0 body-parser@1.15.2 morgan@1.7.0 --save
-$ npm install @types/body-parser@0.0.33 @types/morgan@1.7.32 --save-dev
-</code></pre>
-
-<p>Inside of <em>App.ts</em> let&rsquo;s create the <code>App</code> class to package up and configure our Express server. An instance of <code>App</code> will:</p>
-
-<ul>
-<li>Hold a reference to our instance of Express</li>
-<li>Automatically configure any middleware that we want to use</li>
-<li>Attach any routers/route handlers that we create</li>
-</ul>
-
-
-<p>Essentially, it&rsquo;s going to bootstrap the app and deliver it to the call to <code>http.createServer</code> in <em>index.ts</em>.</p>
-
-<p><em>App.ts</em>:</p>
-
-<pre><code class="javascript">import * as path from 'path';
-import * as express from 'express';
-import * as logger from 'morgan';
-import * as bodyParser from 'body-parser';
-
-// Creates and configures an ExpressJS web server.
-class App {
-
-  // ref to Express instance
-  public express: express.Application;
-
-  //Run configuration methods on the Express instance.
-  constructor() {
-    this.express = express();
-    this.middleware();
-    this.routes();
-  }
-
-  // Configure Express middleware.
-  private middleware(): void {
-    this.express.use(logger('dev'));
-    this.express.use(bodyParser.json());
-    this.express.use(bodyParser.urlencoded({ extended: false }));
-  }
-
-  // Configure API endpoints.
-  private routes(): void {
-    /* This is just to get up and running, and to make sure what we've got is
-     * working so far. This function will change when we start to add more
-     * API endpoints */
-    let router = express.Router();
-    // placeholder route handler
-    router.get('/', (req, res, next) =&gt; {
-      res.json({
-        message: 'Hello World!'
-      });
-    });
-    this.express.use('/', router);
-  }
-
-}
-
-export default new App().express;
-</code></pre>
-
-<p>Here&rsquo;s a quick rundown:</p>
-
-<ul>
-<li>The <code>App.express</code> field holds a reference to Express. This makes it easier to access <code>App</code> methods for configuration and simplifies exporting the configured instance to <em>index.ts</em>.</li>
-<li><code>App.middleware</code> configures our Express middleware. Right now we&rsquo;re using the <a href="https://github.com/expressjs/morgan"><code>morgan</code></a> logger and <a href="https://github.com/expressjs/body-parser"><code>body-parser</code></a>.</li>
-<li><code>App.routes</code> will be used to link up our API endpoints and route handlers.</li>
-</ul>
-
-
-<blockquote><p><strong>NOTE</strong>: If you have a text editor with rich TypeScript support, the error in <em>index.ts</em> should have disappeared.</p></blockquote>
-
-<p>Currently, there&rsquo;s a simple placeholder handler for the base URL that should return a JSON payload with <code>{ "message": "Hello World!" }</code>. Before writing more code, let&rsquo;s make sure that we&rsquo;re starting with a working, listening, and hopefully responding server. We&rsquo;re going to use <a href="https://httpie.org/">httpie</a> for this quick sanity check.</p>
-
-<p>Compile, and then run the server:</p>
-
-<pre><code class="sh">$ gulp scripts
-$ npm start
-</code></pre>
-
-<p>To test, open a new terminal window and run:</p>
-
-<pre><code class="sh">$ http localhost:3000
-</code></pre>
-
-<p>If everything has gone well, you should get a response similar to this:</p>
-
-<pre><code class="sh">HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 26
-Content-Type: application/json; charset=utf-8
-X-Powered-By: Express
-
-{
-    "message": "Hello World!"
-}
-</code></pre>
-
-<p>The server is listening! Now we can start building the API.</p>
-
-<h2>The API</h2>
-
-<p>Since we&rsquo;re good developers (and citizens), let&rsquo;s utilize TDD (test-driven development) while we build out the API. That means we want to set up a testing environment. We&rsquo;ll be writing our test files in TypeScript, and using <a href="http://mochajs.org/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> to create the tests. Let&rsquo;s start by installing these to our <code>devDependencies</code>:</p>
-
-<pre><code class="sh">$ npm install mocha@3.1.2 chai@3.5.0 chai-http@3.0.0 --save-dev
-$ npm install @types/mocha@2.2.32 @types/chai@3.4.34 @types/chai-http@0.0.29 --save-dev
-</code></pre>
-
-<p>If we write out tests in <em>.ts</em> files, we&rsquo;ll need to make sure that Mocha can understand them. By itself, Mocha can only interpret JavaScript files, not TypeScript. There are a number of different ways to accomplish this. To keep it simple, we&rsquo;ll leverage <code>ts-node</code>, so that we can provide TypeScript interpretation to the Mocha environment without having to transpile the tests into different files. <code>ts-node</code> will interpret and transpile our TypeScript in memory as the tests are run.</p>
-
-<p>Start by installing <code>ts-node</code>:</p>
-
-<pre><code class="sh">$ npm install ts-node@1.6.1 --save-dev
-</code></pre>
-
-<p>Now, in <code>package.json</code>, add a <code>test</code> script to run mocha with the <code>ts-node</code> register:</p>
-
-<pre><code class="json">"scripts": {
-  "start": "node dist/index.js",
-  "test": "mocha --reporter spec --compilers ts:ts-node/register 'test/**/*.test.ts'"
-},
-</code></pre>
-
-<p>With the environment all set up, let&rsquo;s write our first test for the &ldquo;Hello World&rdquo; route we created in <em>App.ts</em>. Start by adding a &ldquo;test&rdquo; folder to the route, and add a file called <em>helloWorld.test.ts</em>:</p>
-
-<pre><code class="javascript">import * as mocha from 'mocha';
-import * as chai from 'chai';
-import chaiHttp = require('chai-http');
-
-import app from '../src/App';
-
-chai.use(chaiHttp);
-const expect = chai.expect;
-
-describe('baseRoute', () =&gt; {
-
-  it('should be json', () =&gt; {
-    return chai.request(app).get('/')
-    .then(res =&gt; {
-      expect(res.type).to.eql('application/json');
-    });
-  });
-
-  it('should have a message prop', () =&gt; {
-    return chai.request(app).get('/')
-    .then(res =&gt; {
-      expect(res.body.message).to.eql('Hello World!');
-    });
-  });
-
-});
-</code></pre>
-
-<p>In the terminal, run <code>npm test</code> you should see both test pass for the <code>baseRoute</code> describe block. Excellent! Now we can test our routes as we build out the API.</p>
-
-<h2>First Endpoint</h2>
-
-<p>Our API will be delivering data on superheros, so we&rsquo;ll need to have a datastore for the API to access. Rather than setting up a full database, for this example let&rsquo;s use a JSON file as our &ldquo;database&rdquo;. Grab the data <a href="https://raw.githubusercontent.com/mjhea0/typescript-node-api/master/src/data.json">here</a> and save it to a new file called <em>data.json</em> in the &ldquo;src&rdquo; folder.</p>
-
-<p>With this little store of data, we&rsquo;ll implement a CRUD interface for the superhero resource. To start, let&rsquo;s implement an endpoint that returns all of our superheros. Here&rsquo;s a test for this endpoint:</p>
-
-<pre><code class="javascript">import * as mocha from 'mocha';
-import * as chai from 'chai';
-import chaiHttp = require('chai-http');
-
-import app from '../src/App';
-
-chai.use(chaiHttp);
-const expect = chai.expect;
-
-describe('GET api/v1/heroes', () =&gt; {
-
-  it('responds with JSON array', () =&gt; {
-    return chai.request(app).get('/api/v1/heroes')
-      .then(res =&gt; {
-        expect(res.status).to.equal(200);
-        expect(res).to.be.json;
-        expect(res.body).to.be.an('array');
-        expect(res.body).to.have.length(5);
-      });
-  });
-
-  it('should include Wolverine', () =&gt; {
-    return chai.request(app).get('/api/v1/heroes')
-      .then(res =&gt; {
-        let Wolverine = res.body.find(hero =&gt; hero.name === 'Wolverine');
-        expect(Wolverine).to.exist;
-        expect(Wolverine).to.have.all.keys([
-          'id',
-          'name',
-          'aliases',
-          'occupation',
-          'gender',
-          'height',
-          'hair',
-          'eyes',
-          'powers'
-        ]);
-      });
-  });
-
-});
-</code></pre>
-
-<p>Add this to a new file called <em>test/hero.test.ts</em>.</p>
-
-<p>To summarize, the test asserts that:</p>
-
-<ul>
-<li>the endpoint is at <code>/api/v1/heroes</code></li>
-<li>it returns a JSON array of hero objects</li>
-<li>we can find Wolverine, and his object contains all the keys that we expect</li>
-</ul>
-
-
-<p>When you run <code>npm test</code>, you should see this one fail with a <code>Error: Not Found</code> in the terminal. Good. This is expected since we haven&rsquo;t set up the route yet.</p>
-
-<p>It&rsquo;s finally that time: Let&rsquo;s implement our CRUD routes!</p>
-
-<p>To start, create a new folder <code>src/routes</code> and create a new file inside the directory named <em>HeroRouter.ts</em>. Inside of here, we&rsquo;ll implement each CRUD route for the superhero resource. To hold each route, we&rsquo;ll have a <code>HeroRouter</code> class that defines the handler for each route, and an <code>init</code> function that attaches each handler to an endpoint with the help of an instance of <code>Express.Router</code>.</p>
-
-<pre><code class="javascript">import {Router, Request, Response, NextFunction} from 'express';
-const Heroes = require('../data');
-
-export class HeroRouter {
-  router: Router
-
-  /**
-   * Initialize the HeroRouter
-   */
-  constructor() {
-    this.router = Router();
-    this.init();
-  }
-
-  /**
-   * GET all Heroes.
-   */
-  public getAll(req: Request, res: Response, next: NextFunction) {
-    res.send(Heroes);
-  }
-
-  /**
-   * Take each handler, and attach to one of the Express.Router's
-   * endpoints.
-   */
-  init() {
-    this.router.get('/', this.getAll);
-  }
-
-}
-
-// Create the HeroRouter, and export its configured Express.Router
-const heroRoutes = new HeroRouter();
-heroRoutes.init();
-
-export default heroRoutes.router;
-</code></pre>
-
-<p>We also need to modify the <code>routes</code> function of <code>App</code> to use our new <code>HeroRouter</code>. Add the import at the top of <em>App.ts</em>:</p>
-
-<pre><code class="javascript">import HeroRouter from './routes/HeroRouter';
-</code></pre>
-
-<p>Then add the API endpoint to <code>private routes(): void</code>:</p>
-
-<pre><code class="javascript">// Configure API endpoints.
-private routes(): void {
-  /* This is just to get up and running, and to make sure what we've got is
-   * working so far. This function will change when we start to add more
-   * API endpoints */
-  let router = express.Router();
-  // placeholder route handler
-  router.get('/', (req, res, next) =&gt; {
-    res.json({
-      message: 'Hello World!'
-    });
-  });
-  this.express.use('/', router);
-  this.express.use('/api/v1/heroes', HeroRouter);
-}
-</code></pre>
-
-<p>Now run <code>npm test</code> and ensure that our tests pass:</p>
-
-<pre><code class="sh">baseRoute
-  ✓ should be json
-  ✓ should have a message prop
-
-GET api/v1/heroes
-  ✓ responds with JSON array
-  ✓ should include Wolverine
-</code></pre>
-
-<h2>Second Endpoint</h2>
-
-<p>Now we&rsquo;re really rolling! Before moving on though, let&rsquo;s break the process down since we&rsquo;ll be repeating it to create and attach each of our route handlers:</p>
-
-<ol>
-<li>Create a method on <code>HeroRouter</code> that takes the arguments of your typical Express request handler: <code>request</code>, <code>response</code>, and <code>next</code>.</li>
-<li>Implement the server&rsquo;s response for the endpoint.</li>
-<li>Inside of <code>init</code>, use <code>HeroRouter</code>&rsquo;s instance of the Express <code>Router</code> to attach the handler to an endpoint of the API.</li>
-</ol>
-
-
-<p>We&rsquo;ll follow this same workflow for each endpoint, and can leave <code>App</code> alone. All of our <code>HeroRouter</code> endpoints will be appended to <code>/api/v1/heroes</code>. Let&rsquo;s implement a <code>GET</code> handler that returns a single hero by the <code>id</code> property. We&rsquo;ll test the endpoint by looking for Luke Cage, who has an <code>id</code> of 1.</p>
-
-<pre><code class="javascript">describe('GET api/v1/heroes/:id', () =&gt; {
-
-  it('responds with single JSON object', () =&gt; {
-    return chai.request(app).get('/api/v1/heroes/1')
-      .then(res =&gt; {
-        expect(res.status).to.equal(200);
-        expect(res).to.be.json;
-        expect(res.body).to.be.an('object');
-      });
-  });
-
-  it('should return Luke Cage', () =&gt; {
-    return chai.request(app).get('/api/v1/heroes/1')
-      .then(res =&gt; {
-        expect(res.body.hero.name).to.equal('Luke Cage');
-      });
-  });
-
-});
-</code></pre>
-
-<p>And the route handler:</p>
-
-<pre><code class="javascript">/**
- * GET one hero by id
- */
-public getOne(req: Request, res: Response, next: NextFunction) {
-  let query = parseInt(req.params.id);
-  let hero = Heroes.find(hero =&gt; hero.id === query);
-  if (hero) {
-    res.status(200)
-      .send({
-        message: 'Success',
-        status: res.status,
-        hero
-      });
-  }
-  else {
-    res.status(404)
-      .send({
-        message: 'No hero found with the given id.',
-        status: res.status
-      });
-  }
-}
-
-/**
- * Take each handler, and attach to one of the Express.Router's
- * endpoints.
- */
-init() {
-  this.router.get('/', this.getAll);
-  this.router.get('/:id', this.getOne);
-}
-</code></pre>
-
-<p>Run the tests!</p>
-
-<pre><code>baseRoute
-  ✓ should be json
-  ✓ should have a message prop
-
-GET api/v1/heroes
-  ✓ responds with JSON array
-  ✓ should include Wolverine
-    ✓ responds with single JSON object
-    ✓ should return Luke Cage
-</code></pre>
-
-<h2>What&rsquo;s Next?</h2>
-
-<p>For the hero resource, we should have endpoints for updating a hero and deleting a hero, but we&rsquo;ll leave that for you to implement. The structure that we&rsquo;ve set up here should guide you through creating those last endpoints.</p>
-
-<p>Once the hero resource is implemented, we could add more resources to the API easily. To follow the same process we would:</p>
-
-<ol>
-<li>Create a new file inside of <em>src/routes</em> to be the router for the resource.</li>
-<li>Attach the resource router to the Express app inside of the <code>routes</code> method of <code>App</code>.</li>
-</ol>
-
-
-<p>Now you&rsquo;re up and running with Express and TypeScript 2.0. Go build something! You can grab the code from the <a href="https://github.com/mjhea0/typescript-node-api">typescript-node-api</a> repo. Cheers!</p>
 ]]></content>
   </entry>
   

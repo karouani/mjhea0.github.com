@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-11T14:40:16-06:00</updated>
+  <updated>2017-05-11T14:41:43-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Developing Microservices - Node, React, and Docker]]></title>
-    <link href="http://mherman.org/blog/2017/05/11/developing-microservices-node/"/>
+    <link href="http://mherman.org/blog/2017/05/11/developing-microservices-node-react-docker/"/>
     <updated>2017-05-11T08:16:46-06:00</updated>
-    <id>http://mherman.org/blog/2017/05/11/developing-microservices-node</id>
+    <id>http://mherman.org/blog/2017/05/11/developing-microservices-node-react-docker</id>
     <content type="html"><![CDATA[<p>In this post you will learn how to quickly spin up a reproducible development environment with Docker to manage a number of Node.js microservices.</p>
 
 <div style="text-align:center;">

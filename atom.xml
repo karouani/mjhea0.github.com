@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-11T14:41:43-06:00</updated>
+  <updated>2017-05-11T14:43:59-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -2153,7 +2153,7 @@
 </table>
 
 
-<blockquote><p><strong>NOTE</strong>: Looking for a more advanced implementation with React? Check out my other post - <a href="ADD%20URL">Developing Microservices - Node, React, and Docker</a>.</p></blockquote>
+<blockquote><p><strong>NOTE</strong>: Looking for a more advanced implementation with React? Check out my other post - <a href="http://mherman.org/blog/2017/05/11/developing-microservices-node-react-docker">Developing Microservices - Node, React, and Docker</a>.</p></blockquote>
 
 <h2>Contents</h2>
 

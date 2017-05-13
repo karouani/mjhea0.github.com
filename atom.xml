@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-11T14:43:59-06:00</updated>
+  <updated>2017-05-13T06:54:05-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -1094,11 +1094,11 @@
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/bash</span>
 </span><span class='line'>
 </span><span class='line'><span class="nv">fails</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">function</span> inspect<span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>inspect<span class="o">()</span> <span class="o">{</span>
 </span><span class='line'>  <span class="k">if</span> <span class="o">[</span> <span class="nv">$1</span> -ne <span class="m">0</span> <span class="o">]</span> <span class="p">;</span> <span class="k">then</span>
 </span><span class='line'>    <span class="nv">fails</span><span class="o">=</span><span class="s2">&quot;${fails} $2&quot;</span>
 </span><span class='line'>  <span class="k">fi</span>
@@ -1113,7 +1113,7 @@
 </span><span class='line'>testcafe firefox tests/**/*.js
 </span><span class='line'>inspect <span class="nv">$?</span> e2e
 </span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="o">[[</span> -n <span class="s2">&quot;${fails}&quot;</span> <span class="o">]]</span><span class="p">;</span>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;${fails}&quot;</span> <span class="o">]</span><span class="p">;</span>
 </span><span class='line'>  <span class="k">then</span>
 </span><span class='line'>    <span class="nb">echo</span> <span class="s2">&quot;Tests failed: ${fails}&quot;</span>
 </span><span class='line'>    <span class="nb">exit </span>1

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-11T14:43:59-06:00</updated>
+  <updated>2017-05-13T06:54:05-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -794,11 +794,11 @@ web-service       | Compiled successfully!
 
 <p>To simplify the test workflow, add a <em>test.sh</em> file to the project root:</p>
 
-<pre><code class="sh">#!/bin/sh
+<pre><code class="sh">#!/bin/bash
 
 fails=''
 
-function inspect() {
+inspect() {
   if [ $1 -ne 0 ] ; then
     fails="${fails} $2"
   fi
@@ -813,7 +813,7 @@ inspect $? movies-service
 testcafe firefox tests/**/*.js
 inspect $? e2e
 
-if [[ -n "${fails}" ]];
+if [ -n "${fails}" ];
   then
     echo "Tests failed: ${fails}"
     exit 1

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-15T06:53:53-06:00</updated>
+  <updated>2017-05-15T06:54:57-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -194,7 +194,7 @@ $ git checkout tags/v1
 <ul>
 <li>Navigate to &ldquo;services/users&rdquo;</li>
 <li><code>npm install</code></li>
-<li>update the <code>start</code> within <em>package.json</em> to <code>"start": "gulp --gulpfile gulpfile.js",</code></li>
+<li>update the <code>start</code> script within <em>package.json</em> to <code>"start": "gulp --gulpfile gulpfile.js",</code></li>
 <li><code>npm start</code></li>
 <li>Open <a href="http://localhost:3000/users/ping">http://localhost:3000/users/ping</a> in your browser</li>
 </ul>
@@ -205,7 +205,7 @@ $ git checkout tags/v1
 <ul>
 <li>Navigate to &ldquo;services/movies&rdquo;</li>
 <li><code>npm install</code></li>
-<li>update the <code>start</code> within <em>package.json</em> to <code>"start": "gulp --gulpfile gulpfile.js",</code></li>
+<li>update the <code>start</code> script within <em>package.json</em> to <code>"start": "gulp --gulpfile gulpfile.js",</code></li>
 <li><code>npm start</code></li>
 <li>Open <a href="http://localhost:3001/movies/ping">http://localhost:3001/movies/ping</a> in your browser</li>
 </ul>

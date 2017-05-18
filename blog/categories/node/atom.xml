@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-16T06:55:16-06:00</updated>
+  <updated>2017-05-18T15:50:08-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -765,7 +765,7 @@ web-service       | Compiled successfully!
 
 <h2>Test Setup</h2>
 
-<p>Thus far we&rsquo;ve only tested each individual microservice with unit and integration tests. Let&rsquo;s turn our attention to functional, end-to-end tests to test the entire system. For this, we&rsquo;ll use <a href="https://testcafe.devexpress.com/">TestCafe</a>.</p>
+<p>Thus far we&rsquo;ve only tested each individual microservice with unit and integration tests. Let&rsquo;s turn our attention to functional, end-to-end tests to test the entire system. For this, we&rsquo;ll use <a href="https://devexpress.github.io/testcafe/">TestCafe</a>.</p>
 
 <blockquote><p><strong>NOTE:</strong> Don&rsquo;t want to use TestCafe? Check out the <a href="https://github.com/mjhea0/node-docker-api/tree/master/tests">code</a> for using Mocha, Chai, Request, and Cheerio (all within a container) for testing.</p></blockquote>
 

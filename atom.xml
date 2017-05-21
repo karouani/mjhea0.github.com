@@ -4,7 +4,7 @@
   <title><![CDATA[Michael Herman]]></title>
   <link href="http://mherman.org/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-18T15:50:08-06:00</updated>
+  <updated>2017-05-21T12:20:38-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -223,7 +223,7 @@
 <li><code>npm install</code></li>
 <li>update the <code>start</code> script within <em>package.json</em> to <code>"gulp --gulpfile gulpfile.js"</code></li>
 <li><code>npm start</code></li>
-<li>Open <a href="http://localhost:3001/movies/ping">http://localhost:3001/movies/ping</a> in your browser</li>
+<li>Open <a href="http://localhost:3000/movies/ping">http://localhost:3000/movies/ping</a> in your browser</li>
 </ul>
 
 

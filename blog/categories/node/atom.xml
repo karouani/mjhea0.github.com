@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Node | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/node/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-05-29T11:57:28-06:00</updated>
+  <updated>2017-05-29T12:27:09-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -497,7 +497,12 @@ RUN npm install react-scripts@0.9.5 -g
 CMD ["npm", "start"]
 </code></pre>
 
-<p>And update the <em>docker-compose.yml</em> file like so:</p>
+<p>As of 05/10/2017 the <a href="http://www.omdbapi.com/">OMDb API</a> is private, so you have to donate at least $1 to gain access. Once you have an API Key, update the <code>API_URL</code> in <em>services/web/src/App.jsx</em>:</p>
+
+<pre><code class="javascript">const API_URL = 'http://www.omdbapi.com/?apikey=addyourkey&amp;s='
+</code></pre>
+
+<p>Then update the <em>docker-compose.yml</em> file like so:</p>
 
 <pre><code>web-service:
   container_name: web-service

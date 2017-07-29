@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ruby | Michael Herman]]></title>
   <link href="http://mherman.org/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://mherman.org/"/>
-  <updated>2017-07-07T08:11:45-06:00</updated>
+  <updated>2017-07-28T21:39:04-06:00</updated>
   <id>http://mherman.org/</id>
   <author>
     <name><![CDATA[Michael Herman]]></name>
@@ -457,7 +457,7 @@ end
 
 <h3>Use tux in order to add some data to the database.</h3>
 
-<pre><code class="sh">$ tux
+<pre><code>$ tux
 &gt;&gt; Post.create(title: 'Testing the title', body: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum venenatis eros eget lectus hendrerit, sed mattis quam pretium. Aenean accumsan eget leo non cursus. Aliquam sagittis luctus mi, quis suscipit neque venenatis et. Pellentesque vitae elementum diam. Quisque iaculis eget neque mattis fermentum. Donec et luctus eros. Suspendisse egestas pharetra elit vel bibendum.')
 &gt;&gt;
 &gt;&gt; Post.all
@@ -492,7 +492,7 @@ $ git commit -am "initial commit"
 end
 </code></pre>
 
-<p>This maps the <code>/</code> url to the template <em>index.html</em> (or <em>index.erb</em> in Ruby terms), found in &ldquo;"views/posts/&rdquo; directory.</p>
+<p>This maps the <code>/</code> url to the template <em>index.html</em> (or <em>index.erb</em> in Ruby terms), found in &ldquo;views/posts/&rdquo; directory.</p>
 
 <blockquote><p>Note: The <em>app.rb</em> file is the controller in MVC-style architecture.</p></blockquote>
 
@@ -1017,7 +1017,7 @@ $ git push heroku master
 
 <h2>Add a captcha</h2>
 
-<p>Help elimiante spam by adding a captcha to the new post form. View the blog post - <a href="http://mherman.org/blog/2014/05/04/adding-a-captcha-to-sinatra-to-minimize-spam/">Adding a Captcha to Sinatra to Minimize Spam</a>.</p>
+<p>Help eliminate spam by adding a captcha to the new post form. View the blog post - <a href="http://mherman.org/blog/2014/05/04/adding-a-captcha-to-sinatra-to-minimize-spam/">Adding a Captcha to Sinatra to Minimize Spam</a>.</p>
 ]]></content>
   </entry>
   
